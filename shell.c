@@ -1,49 +1,49 @@
 #include "shell.h"
 #include <string.h>
 
-#define TRUE 1
-#define FALSE 0
+#define bool char
 
-size_t len(char *string) {
-    size_t i = 0;
-    while(string[i]) {
-        i++;
-    }
-    return i;
+char *BUILT_INS = {"cd"};
+
+bool is_cd(char *command) {
+    return !strcmp(&BUILT_INS[0], command);
 }
 
-char *concat(char *first, char *second) {
-    size_t length = len(first) + len(second);
-    char* new = (char*) malloc(sizeof(char) * length + 1);
-    int i = 0;
-    while (first[i]) {
-        new[i] = first[i];
-        i++;
+void pwd() {
+    char *cwd = getcwd(NULL, 0);
+    printf("%s\n", cwd);
+    free(cwd);
+
+}
+
+void run_cd(char *command, char *arg_path, char **prev_path) {
+    char *cwd = getcwd(NULL, 0);
+    *prev_path = cwd;
+    free(cwd);
+    int err = chdir(arg_path);
+    if (err != 0) {
+        perror("");
     }
-    int j = 0;
-    while(second[j]) {
-        new[i] = second[j];
-        i++;
-        j++;
-    }
-    new[i] = 0;
-    return new;
 }
 
 int shell() {
     char *buf = NULL, *token;
     size_t count = 0;
     ssize_t nread;
-    pid_t child_pid;
+    pid_t pid;
     int status, i;
     char **array;
+    char *prev_path;
 
-    while (TRUE) {
-        write(STDOUT_FILENO, "CShell > ", 7);
+    while (1) {
+        pwd();
+        fflush(stdout);
+        write(STDOUT_FILENO, "CShell > ", 9);
+        fflush(stdout);
         nread = getline(&buf, &count, stdin);
         if (nread == -1) {
             perror("Exiting shell");
-            exit(1);
+            exit(EXIT_FAILURE);
         }
         token = strtok(buf, " \n");
         array = malloc(sizeof(char*) * 1024);
@@ -54,39 +54,35 @@ int shell() {
             i++;
         }
         array[i] = NULL;
-        child_pid = fork();
-        switch (child_pid) {
-            case -1:
-                perror("Failed to create child process\n");
-                exit(41);
-                break;
-            case 0:
-                if (execve(array[0], array, NULL) == -1) {
-                    perror(array[0]);
-                    exit(97);
+        char *command = array[0];
+        pid = fork();
+        if (pid == 0) {
+            if (is_cd(command)) {
+                if (i == 2) {
+                    if (strcmp(array[1], "~") == 0) {
+                        run_cd(command, "/home/sebastian", &prev_path);
+                    } else if (strcmp(array[1], "-") == 0) {
+                        run_cd(command, prev_path, &prev_path);
+                    } else {
+                        run_cd(command, array[1], &prev_path);
+                    }
+                } else {
+                    run_cd(command, "/home/sebastian", &prev_path);
                 }
-                break;
-            default:
-                wait(&status);
-                break;
+            } else {
+                if (execve(command, array, NULL) == -1) {
+                    perror("");
+                    exit(127);
+                }
+            }
         }
-        printf("%s", buf);
+        wait(&status);
+        buf = NULL;
     }
     free(buf);
     return 0;
 }
 
 int main(int argc, char *argv[]) {
-    char *left;
-    char *right;
-    right = "bello";
-    size_t count;
-    int nread = getline(&left, &count, stdin);
-    left[len(left) - 1] = 0;
-    char *test = concat(left, right);
-    printf("%s\n", test);
-    free(left);
-    printf("Freed left");
-    free(right);
-    printf("Freed right");
+    shell();
 }
