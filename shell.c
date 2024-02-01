@@ -13,13 +13,11 @@ void pwd() {
     char *cwd = getcwd(NULL, 0);
     printf("%s\n", cwd);
     free(cwd);
-
 }
 
 void run_cd(char *command, char *arg_path, char **prev_path) {
     char *cwd = getcwd(NULL, 0);
     *prev_path = cwd;
-    free(cwd);
     int err = chdir(arg_path);
     if (err != 0) {
         perror("");
@@ -33,7 +31,8 @@ int shell() {
     pid_t pid;
     int status, i;
     char **array;
-    char *prev_path;
+    char *cwd = getcwd(NULL, 0);
+    char **prev_path = &cwd;
 
     while (1) {
         pwd();
@@ -60,14 +59,14 @@ int shell() {
             if (is_cd(command)) {
                 if (i == 2) {
                     if (strcmp(array[1], "~") == 0) {
-                        run_cd(command, "/home/sebastian", &prev_path);
+                        run_cd(command, "/home/sebastian", prev_path);
                     } else if (strcmp(array[1], "-") == 0) {
-                        run_cd(command, prev_path, &prev_path);
+                        run_cd(command, *prev_path, prev_path);
                     } else {
-                        run_cd(command, array[1], &prev_path);
+                        run_cd(command, array[1], prev_path);
                     }
                 } else {
-                    run_cd(command, "/home/sebastian", &prev_path);
+                    run_cd(command, "/home/sebastian", prev_path);
                 }
             } else {
                 if (execve(command, array, NULL) == -1) {
@@ -80,6 +79,8 @@ int shell() {
         buf = NULL;
     }
     free(buf);
+    free(prev_path);
+    free(cwd);
     return 0;
 }
 
