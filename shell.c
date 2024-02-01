@@ -11,17 +11,32 @@ bool is_cd(char *command) {
 
 void pwd() {
     char *cwd = getcwd(NULL, 0);
-    printf("%s\n", cwd);
+    printf("Current path: %s\n", cwd);
     free(cwd);
 }
 
 void run_cd(char *command, char *arg_path, char **prev_path) {
-    char *cwd = getcwd(NULL, 0);
-    *prev_path = cwd;
     int err = chdir(arg_path);
     if (err != 0) {
         perror("");
+        exit(1);
+    } else {
+        *prev_path = getcwd(NULL, 0);
     }
+}
+
+char **tokenize(char *string, int *i) {
+    int j = *i;
+    char *token = strtok(string, " \n");
+    char **array = malloc(sizeof(char) * 1024);
+    while (token) {
+        array[j] = token;
+        token = strtok(NULL, " \n");
+        j++;
+    }
+    array[j] = NULL;
+    i = &j;
+    return array;
 }
 
 int shell() {
@@ -29,7 +44,7 @@ int shell() {
     size_t count = 0;
     ssize_t nread;
     pid_t pid;
-    int status, i;
+    int status, i = 0;
     char **array;
     char *cwd = getcwd(NULL, 0);
     char **prev_path = &cwd;
@@ -44,9 +59,9 @@ int shell() {
             perror("Exiting shell");
             exit(EXIT_FAILURE);
         }
-        token = strtok(buf, " \n");
-        array = malloc(sizeof(char*) * 1024);
-        i = 0;
+        array = tokenize(buf, &i);
+        /* token = strtok(buf, " \n"); */
+        /* array = malloc(sizeof(char*) * 1024); */
         while (token) {
             array[i] = token;
             token = strtok(NULL, " \n");
@@ -58,9 +73,10 @@ int shell() {
         if (pid == 0) {
             if (is_cd(command)) {
                 if (i == 2) {
-                    if (strcmp(array[1], "~") == 0) {
+                    char *argument = array[1];
+                    if (strcmp(argument, "~") == 0) {
                         run_cd(command, "/home/sebastian", prev_path);
-                    } else if (strcmp(array[1], "-") == 0) {
+                    } else if (strcmp(argument, "-") == 0) {
                         run_cd(command, *prev_path, prev_path);
                     } else {
                         run_cd(command, array[1], prev_path);
