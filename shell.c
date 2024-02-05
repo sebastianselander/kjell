@@ -1,115 +1,110 @@
 #include "shell.h"
 #include <string.h>
+#include "builtins.h"
 
-#define bool char
-#define HOME "/home/sebastian"
+char* read_line() {
+    char *line = NULL;
+    size_t bufsize = 0;
 
-char *BUILT_INS = {"cd"};
-
-bool is_cd(char *command) {
-    return !strcmp(&BUILT_INS[0], command);
-}
-
-void pwd() {
-    char *cwd = getcwd(NULL, 0);
-    printf("%s\n", cwd);
-    fflush(stdout);
-    free(cwd);
-}
-
-void run_cd(char *command, char *arg_path, char **prev_path) {
-    *prev_path = getcwd(NULL, 0);
-    int err = chdir(arg_path);
-    if (err != 0) {
-        perror("");
-        exit(1);
-    }
-}
-
-char **tokenize(char *string, int *size) {
-    char *token = strtok(string, " \n");
-    char **array = malloc(sizeof(char) * 1024);
-    while (token) {
-        array[*size] = token;
-        token = strtok(NULL, " \n");
-        *size = *size + 1;
-    }
-    array[*size] = NULL;
-    return array;
-}
-
-void printArray(char **array, int size) {
-    printf("{ ");
-    for (int i = 0; i < size; i++) {
-        printf("%s ", array[i]);
-    }
-    printf("} \n");
-}
-
-// returns 0 on success, -1 if command was not cd
-int execcd() {
-
-}
-
-int shell() {
-    char *buf = NULL, *token;
-    size_t count = 0;
-    ssize_t nread;
-    pid_t pid;
-    int status;
-    char *cwd = getcwd(NULL, 0);
-    char **prev_path = &cwd;
-
-    while (1) {
-        pwd();
-        write(STDOUT_FILENO, "CShell > ", 9);
-        nread = getline(&buf, &count, stdin);
-        if (nread == -1) {
-            perror("Exiting shell");
+    if (getline(&line, &bufsize, stdin) == -1) {
+        if (feof(stdin)) {
+            exit(EXIT_SUCCESS);
+        } else {
+            perror("read line");
             exit(EXIT_FAILURE);
         }
-        int i = 0;
-        char **array = tokenize(buf, &i);
-        printArray(array, i);
-        char *command = array[0];
-        pid = fork();
-        if (pid != -1) {
-            if (pid != 0) {
-                printf("pid [%d]\n", pid);
-            } else {
-                if (is_cd(command)) {
-                    if (i == 2) {
-                        char *argument = array[1];
-                        if (strcmp(argument, "~") == 0) {
-                            run_cd(command, HOME, prev_path);
-                        } else if (strcmp(argument, "-") == 0) {
-                            run_cd(command, *prev_path, prev_path);
-                        } else {
-                            run_cd(command, array[1], prev_path);
-                        }
-                    } else if (i == 1) {
-                        run_cd(command, HOME, prev_path);
-                    } else {
-                        fprintf(stderr, "one argument required\n");
-                    }
-                } else {
-                    array[0] = NULL; // Should be filename
-                    if (execve(command, array, NULL) == -1) {
-                        perror("");
-                        exit(127);
-                    }
-                }
+    }
+    return line;
+}
+
+#define TOK_DELIM " \r\t\n\a"
+#define TOK_BUFSIZE 64
+char** split_line(char* line) {
+    int bufsize = TOK_BUFSIZE;
+    int position = 0;
+
+    char **tokens = malloc(sizeof(char*) * bufsize);
+    char *token;
+
+    if (!tokens) {
+        fprintf(stderr, "Allocation error\n");
+        exit(EXIT_FAILURE);
+    }
+
+    token = strtok(line, TOK_DELIM);
+    while (token != NULL) {
+        tokens[position] = token;
+        position++;
+        if (position >= bufsize) {
+            bufsize += TOK_BUFSIZE;
+            tokens = realloc(tokens, bufsize * sizeof(char*));
+            if (!tokens) {
+                fprintf(stderr, "Reallocation error\n");
+                exit(EXIT_FAILURE);
             }
         }
-        wait(&status);
-        buf = NULL;
+
+        token = strtok(NULL, TOK_DELIM);
     }
-    free(buf);
-    free(prev_path);
+    tokens[position] = NULL;
+    return tokens;
+}
+
+void prompt() {
+    char *cwd = getcwd(NULL, 0);
+    printf("%s\n> ", cwd);
     free(cwd);
-    return 0;
+}
+
+int shell_launch(char **args) {
+    pid_t pid;
+    int status;
+
+    pid = fork();
+    if (pid == 0) {
+        if (execvp(args[0], args) == -1) {
+            perror("shell");
+        }
+        exit(EXIT_FAILURE);
+    } else if (pid < 0) {
+        perror("shell");
+    } else {
+        pid_t wpid = wait(&status);
+        printf("status: %d", status);
+    }
+
+    return 1;
+}
+
+int shell_execute(char **args) {
+    if (args[0] == NULL) {
+        return 1;
+    }
+
+    for (int i = 0; i < cbsh_num_builtins(); i++) {
+        if (strcmp(args[0], builtin_str[i]) == 0) {
+            return (*builtin_func[i])(args);
+        }
+    }
+    return shell_launch(args);
+}
+
+void shell_loop() {
+    while (1) {
+        prompt();
+        char *line = read_line();
+        char **args = split_line(line);
+        int status = shell_execute(args);
+
+        free(line);
+        free(args);
+
+        if (!status) {
+            break;
+        }
+    }
 }
 
 int main(int argc, char *argv[]) {
-    shell();
+    shell_loop();
 }

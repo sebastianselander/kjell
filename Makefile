@@ -1,5 +1,5 @@
 build:
-	gcc -Wall -pedantic *.c -o cshell
+	gcc -Wall -pedantic -o cshell *.c
 
 run: build
 	./cshell
