@@ -1,3 +1,4 @@
 .direnv
 cshell
 .ccls-cache/
+.envrc
