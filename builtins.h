@@ -1,9 +1,11 @@
 #ifndef BUILTINS_H
 #define BUILTINS_H
 
-int cbsh_cd(char **args);
-int cbsh_help(char **args);
-int cbsh_exit(char **args);
+#include "utils.h"
+
+ExitInfo cbsh_cd(char **args);
+ExitInfo cbsh_help(char **args);
+ExitInfo cbsh_exit(char **args);
 
 char *builtin_str[] = {
     "cd",
@@ -11,7 +13,7 @@ char *builtin_str[] = {
     "exit",
 };
 
-int (*builtin_func[]) (char**) = {
+ExitInfo (*builtin_func[]) (char**) = {
     &cbsh_cd,
     &cbsh_help,
     &cbsh_exit,

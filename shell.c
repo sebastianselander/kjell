@@ -3,6 +3,8 @@
 #include "builtins.h"
 #include "utils.h"
 
+typedef struct ExitInfo ExitInfo;
+
 char* read_line() {
     char *line = NULL;
     size_t bufsize = 0;
@@ -51,15 +53,34 @@ char** split_line(char* line) {
     return tokens;
 }
 
-void prompt() {
+void prompt(int exit_code) {
     char *cwd = getcwd(NULL, 0);
-    printf("%s\n> ", cwd);
+    char *green = "\033[32m";
+    char *red = "\033[31m";
+    char *close = "\033[0m";
+    if (exit_code) {
+        printf("%s\n%s>%s ", cwd, red, close);
+    } else {
+        printf("%s\n%s> %s", cwd, green, close);
+    }
     free(cwd);
 }
 
-int shell_launch(char **args) {
+ExitInfo shell_launch(char **args, int exit_code) {
     pid_t pid;
-    int status;
+    int exit_c;
+    bool negate = false;
+
+    if (strcmp(args[0], "!") == 0) {
+        negate = true;
+        // shift all elements down one step, removing the bang
+        for (int i = 1;; i++) {
+            args[i-1] = args[i];
+            if (args[i] == NULL) {
+                break;
+            }
+        } 
+    }
 
     pid = fork();
     if (pid == 0) {
@@ -70,17 +91,22 @@ int shell_launch(char **args) {
     } else if (pid < 0) {
         perror("shell");
     } else {
-        pid_t wpid = wait(&status);
-        normalize_status(&status);
-        printf("status: %d\n", status);
+        pid_t wpid = wait(&exit_c);
+        normalize_status(&exit_c);
+        if (negate) {
+            exit_c = !exit_c;
+        }
     }
 
-    return 1;
+    ExitInfo exit_info = exit_info_init();
+    exit_info.exit_code = exit_c;
+    return exit_info;
 }
 
-int shell_execute(char **args) {
+ExitInfo shell_execute(char **args, int exit_code) {
     if (args[0] == NULL) {
-        return 1;
+        ExitInfo exit_info = {0, false};
+        return exit_info;
     }
 
     for (int i = 0; i < cbsh_num_builtins(); i++) {
@@ -88,20 +114,22 @@ int shell_execute(char **args) {
             return (*builtin_func[i])(args);
         }
     }
-    return shell_launch(args);
+    return shell_launch(args, exit_code);
 }
 
 void shell_loop() {
+    ExitInfo exit_info = exit_info_init();
+
     while (1) {
-        prompt();
+        prompt(exit_info.exit_code);
         char *line = read_line();
         char **args = split_line(line);
-        int status = shell_execute(args);
+        exit_info = shell_execute(args, exit_info.exit_code);
 
         free(line);
         free(args);
 
-        if (!status) {
+        if (exit_info.terminate) {
             break;
         }
     }

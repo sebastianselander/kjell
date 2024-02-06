@@ -1,26 +1,32 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include "utils.h"
 
 #define HOME_PATH "/home/sebastian"
-int cbsh_cd(char** args) {
+ExitInfo cbsh_cd(char** args) {
+    ExitInfo exit_info = exit_info_init();
     char *arg;
     if (args[1] == NULL) {
         arg = HOME_PATH;
     } else {
         arg = args[1];
-        if (chdir(arg) != 0) {
-            perror("cd");
-        }
     }
-    return 1;
+    if (chdir(arg) != 0) {
+        perror("cd");
+        exit_info.exit_code = 1;
+    }
+    return exit_info;
 }
 
-int cbsh_exit(char **args) {
-    return 0;
+ExitInfo cbsh_exit(char **args) {
+    ExitInfo exit_info = exit_info_init();
+    exit_info.terminate = true;
+    return exit_info;
 }
 
-int cbsh_help(char **args) {
+ExitInfo cbsh_help(char **args) {
+    ExitInfo exit_info = exit_info_init();
     printf("help!\n");
-    return 1;
+    return exit_info;
 }
