@@ -1,6 +1,7 @@
 #include "shell.h"
 #include <string.h>
 #include "builtins.h"
+#include "utils.h"
 
 char* read_line() {
     char *line = NULL;
@@ -70,7 +71,8 @@ int shell_launch(char **args) {
         perror("shell");
     } else {
         pid_t wpid = wait(&status);
-        printf("status: %d", status);
+        normalize_status(&status);
+        printf("status: %d\n", status);
     }
 
     return 1;

@@ -26,6 +26,7 @@
 
           packages = with pkgs; [
             ccls
+            clang-tools
             cmake
             cmakeCurses
             gtest
