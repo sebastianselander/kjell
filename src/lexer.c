@@ -1,29 +1,8 @@
-#include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <ctype.h>
 #include "utils.h"
-
-typedef enum {
-    TOKEN_SEMICOLON,
-    TOKEN_LPAREN,
-    TOKEN_RPAREN,
-    TOKEN_AND,
-    TOKEN_OR,
-    TOKEN_BANG,
-    TOKEN_TEXT,
-    TOKEN_INVALID,
-} Token_Kind;
-
-typedef struct {
-    Token_Kind kind;
-    const char *text;
-    size_t text_len;
-} Token;
-
-typedef struct {
-    const char* content;
-    size_t content_len;
-    size_t cursor;
-} Lexer;
+#include "lexer.h"
 
 Lexer lexer_new(const char* content, size_t content_len) {
     Lexer l = {
@@ -34,10 +13,10 @@ Lexer lexer_new(const char* content, size_t content_len) {
     return l;
 }
 
-#define TOKEN_SYMBOL "!@#$%^&*"
+#define TOKEN_SYMBOL_SET "!;&|"
 bool is_symbol(char c) {
-    const char *symbols = TOKEN_SYMBOL;
-    int len = sizeof(TOKEN_SYMBOL) / sizeof(char);
+    const char *symbols = TOKEN_SYMBOL_SET;
+    int len = sizeof(TOKEN_SYMBOL_SET) / sizeof(char);
     for (int i = 0; i < len; i++) {
        if (symbols[i] == c) {
            return true;
@@ -46,21 +25,8 @@ bool is_symbol(char c) {
     return false;
 }
 
-#define TOKEN_DELIM " \r\t\n\a"
-
-bool is_delim(char c) {
-    const char *delim = TOKEN_DELIM;
-    int len = sizeof(TOKEN_DELIM) / sizeof(char);
-    for (int i = 0; i < len; i++) {
-        if (delim[i] == c) {
-            return true;
-        }
-    }
-    return false;
-}
-
 void lexer_trim_left(Lexer *lexer) {
-    while (lexer->cursor < lexer->content_len && is_delim(lexer->content[lexer->cursor])) {
+    while (lexer->cursor < lexer->content_len && isspace(lexer->content[lexer->cursor])) {
         lexer->cursor += 1;
     }
 }
@@ -70,91 +36,128 @@ Token lexer_next(Lexer *lexer) {
 
     Token token = {
         .text = &lexer->content[lexer->cursor],
+        .kind = TOKEN_INVALID,
+        .text_len = 0,
     };
-
-    char current_chr = lexer->content[lexer->cursor];
 
     if (lexer->cursor >= lexer->content_len) return token;
 
-    if (current_chr == '!') {
+    if (lexer->content[lexer->cursor] == '(') {
         lexer->cursor += 1;
-        token.kind = TOKEN_BANG;
         token.text_len = 1;
+        token.kind = TOKEN_LPAREN;
+        return token;
+    }
+    if (lexer->content[lexer->cursor] == ')') {
+        lexer->cursor += 1;
+        token.text_len = 1;
+        token.kind = TOKEN_RPAREN;
         return token;
     }
 
-    if (current_chr == ';') {
-        lexer->cursor += 1;
-        token.kind = TOKEN_SEMICOLON;
-        token.text_len = 1;
-        return token;
-    }
-
-    if (current_chr == '&') {
-        int next_cursor = lexer->cursor + 1;
-        char next_chr = lexer->content[next_cursor];
-        if (next_cursor < lexer->content_len && next_chr == '&') {
-            lexer->cursor += 2;
-            token.text_len = 2;
+    if (is_symbol(lexer->content[lexer->cursor])) {
+        while (lexer->cursor < lexer->content_len && is_symbol(lexer->content[lexer->cursor])) {
+            lexer->cursor += 1;
+            token.text_len += 1;
+            token.kind = TOKEN_SYMBOL;
+        }
+        char* symbol_text = malloc(sizeof(char) * token.text_len);
+        int i = 0;
+        for (; i < token.text_len; i++) {
+            symbol_text[i] = token.text[i];
+        }
+        symbol_text[i] = 0;
+        if (strcmp(symbol_text,";") == 0) {
+            token.kind = TOKEN_SEMICOLON;
+        }
+        if (strcmp(symbol_text,"!") == 0) {
+            token.kind = TOKEN_BANG;
+        }
+        if (strcmp(symbol_text,"&&") == 0) {
             token.kind = TOKEN_AND;
-            return token;
+        }
+        if (strcmp(symbol_text,"||") == 0) {
+            token.kind = TOKEN_OR;
+        }
+        free(symbol_text);
+
+        return token;
+    }
+
+    // i know i know, it cant be a symbol by the previous if-check
+    if (!isspace(lexer->content[lexer->cursor]) && !is_symbol(lexer->content[lexer->cursor])) {
+        while (lexer->cursor < lexer->content_len && !isspace(lexer->content[lexer->cursor]) && !is_symbol(lexer->content[lexer->cursor])) {
+            lexer->cursor += 1;
+            token.text_len += 1;
+            token.kind = TOKEN_TEXT;
         }
     }
-
     return token;
 }
+
+void lexer_print_state(Lexer lexer) {
+    int content_len = lexer.content_len;
+    int cursor = lexer.cursor;
+    const char* content = lexer.content;
+    printf("\n--Lexer State--\nContent length: %d\nCursor: %d\nContent: %s\n\n", content_len, cursor, content);
+
+}
+
 
 void print_str(const char *text, size_t text_len) {
     for (int i = 0; i < text_len; i++) {
         printf("%c", text[i]);
     }
+}
+
+void println_str(const char* text, size_t text_len) {
+    print_str(text, text_len);
     printf("\n");
 }
 
 void token_print(Token token) {
+    char* kind_text = "";
     switch (token.kind) {
         case TOKEN_SEMICOLON: {
-            printf("Token: SEMICOLON\n");
+            kind_text = "SEMICOLON";
             break;
         }
         case TOKEN_LPAREN:{
-            printf("Token: LPAREN\n");
+            kind_text = "LPAREN";
             break;
         }
         case TOKEN_RPAREN:{
-            printf("Token: RPAREN\n");
+            kind_text = "RPAREN";
             break;
         }
         case TOKEN_AND:{
-            printf("Token: AND\n");
+            kind_text = "AND";
             break;
         }
         case TOKEN_OR:{
-            printf("Token: OR\n");
+            kind_text = "OR";
             break;
         }
         case TOKEN_BANG:{
-            printf("Token: BANG\n");
+            kind_text = "BANG";
             break;
         }
         case TOKEN_TEXT:{
-            printf("Token: TEXT\n");
+            kind_text = "TEXT";
+            break;
+        }
+        case TOKEN_SYMBOL: {
+            kind_text = "SYMBOL";
             break;
         }
         case TOKEN_INVALID:{
-            printf("Token: INVALID\n");
+            kind_text = "INVALID";
             break;
         }
     }
+    printf("Token: {\n");
+    printf("    kind: %s\n", kind_text);
+    printf("    text: '");
     print_str(token.text, token.text_len);
-}
-
-int main(void) {
-    const char *text = "! &&";
-    size_t text_len = 4;
-    Lexer l = lexer_new(text, text_len);
-    while (l.cursor < l.content_len) {
-        Token t = lexer_next(&l);
-        token_print(t);
-    }
+    printf("'\n    text_len: %d\n}\n", (int) token.text_len);
 }
