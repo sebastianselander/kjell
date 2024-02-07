@@ -11,11 +11,13 @@ char *builtin_str[] = {
     "cd",
     "help",
     "exit",
+    ":q",
 };
 
 ExitInfo (*builtin_func[]) (char**) = {
     &cbsh_cd,
     &cbsh_help,
+    &cbsh_exit,
     &cbsh_exit,
 };
 
