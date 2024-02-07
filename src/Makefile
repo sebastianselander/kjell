@@ -1,7 +1,7 @@
-build:
-	gcc -Wall -pedantic -o out
-
 run: build
-	./out
+	./bin/out
+build:
+	gcc -Wall -pedantic *.c -o bin/out
+
 clean:
-	rm out
+	rm -r bin/

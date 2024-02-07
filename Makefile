@@ -1,7 +1,7 @@
 run:
-	cd cshell && make run
+	cd src && make run
 build:
-	cd cshell && make build
+	cd src && make build
 
 clean:
-	cd cshell && make clean
+	cd src && make clean
