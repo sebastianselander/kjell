@@ -1,5 +1,4 @@
+run:
+	cd cshell && make run
 build:
-	gcc -Wall -pedantic -o cshell *.c
-
-run: build
-	./cshell
+	cd cshell && make build
