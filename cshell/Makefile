@@ -1,5 +1,7 @@
 build:
-	gcc -Wall -pedantic -o cshell *.c
+	gcc -Wall -pedantic -o out
 
 run: build
-	./cshell
+	./out
+clean:
+	rm out
