@@ -2,6 +2,7 @@
 #include <string.h>
 #include "builtins.h"
 #include "utils.h"
+#include "parser.h"
 
 typedef struct ExitInfo ExitInfo;
 
