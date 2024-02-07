@@ -13,6 +13,10 @@ Lexer lexer_new(const char* content, size_t content_len) {
     return l;
 }
 
+bool lexer_done(Lexer *lexer) {
+    return lexer->cursor >= lexer->content_len;
+}
+
 #define TOKEN_SYMBOL_SET "!;&|"
 bool is_symbol(char c) {
     const char *symbols = TOKEN_SYMBOL_SET;

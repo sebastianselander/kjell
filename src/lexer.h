@@ -29,7 +29,9 @@ typedef struct {
 
 Lexer lexer_new(const char* content, size_t content_len);
 Token lexer_next(Lexer *lexer);
+
 void lexer_print_state(Lexer lexer);
 void token_print(Token token);
+bool lexer_done(Lexer *lexer);
 
 #endif
