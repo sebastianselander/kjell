@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 typedef enum {
-    TOKEN_SEMICOLON,
+    TOKEN_SEMICOLON = 0,
     TOKEN_LPAREN,
     TOKEN_RPAREN,
     TOKEN_AND,
@@ -13,6 +13,7 @@ typedef enum {
     TOKEN_TEXT,
     TOKEN_SYMBOL,
     TOKEN_INVALID,
+    TOKEN_EOF,
 } Token_Kind;
 
 typedef struct {
@@ -27,11 +28,20 @@ typedef struct {
     size_t cursor;
 } Lexer;
 
+typedef struct {
+    Token *tokens;
+    size_t tokens_len;
+
+} Token_Info;
+
 Lexer lexer_new(const char* content, size_t content_len);
 Token lexer_next(Lexer *lexer);
 
+Token_Info tokenize(const char* content, size_t content_len);
+
 void lexer_print_state(Lexer lexer);
 void token_print(Token token);
-bool lexer_done(Lexer *lexer);
+bool lexer_continue(Lexer *lexer);
+void token_free(Token *ptr);
 
 #endif

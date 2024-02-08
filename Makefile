@@ -5,3 +5,6 @@ build:
 
 clean:
 	cd src && make clean
+
+parser:
+	cd src && make parser
