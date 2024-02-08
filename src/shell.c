@@ -61,9 +61,9 @@ void prompt(int exit_code) {
     char *red = "\033[31m";
     char *close = "\033[0m";
     if (exit_code) {
-        printf("%s\n%s>%s ", cwd, red, close);
+        printf("%s\n%s$%s ", cwd, red, close);
     } else {
-        printf("%s\n%s> %s", cwd, green, close);
+        printf("%s\n%s$ %s", cwd, green, close);
     }
     free(cwd);
 }
