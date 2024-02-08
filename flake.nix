@@ -1,5 +1,5 @@
 {
-  description = "CShell";
+  description = "Flake for the Kjell shell";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/23.11";
@@ -22,16 +22,12 @@
         };
       in {
         devShells.default = pkgs.mkShell rec {
-          name = "CShell";
+          name = "Kjell";
 
           packages = with pkgs; [
             ccls
             clang-tools
-            cmake
-            cmakeCurses
-            gtest
-            spdlog
-            abseil-cpp
+            bison
           ];
 
           # development.
