@@ -26,6 +26,7 @@ void debug(char *string, int i) {
 
 /* TODO:
     - Implement automatically resizing buffers instead of exiting on reaching cap
+    - make `;, ||, &&` left-associative (how are they not?)
 */
 
 typedef struct AST AST;
