@@ -22,7 +22,7 @@
         };
       in {
         devShells.default = pkgs.mkShell rec {
-          name = "Kjell";
+          name = "Kjell shell";
 
           packages = with pkgs; [
             ccls
