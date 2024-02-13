@@ -22,39 +22,6 @@ char *read_line() {
     return line;
 }
 
-#define TOK_DELIM " \r\t\n\a"
-#define TOK_BUFSIZE 64
-char **split_line(char *line) {
-    int bufsize = TOK_BUFSIZE;
-    int position = 0;
-
-    char **tokens = malloc(sizeof(char *) * bufsize);
-    char *token;
-
-    if (!tokens) {
-        fprintf(stderr, "Allocation error\n");
-        exit(EXIT_FAILURE);
-    }
-
-    token = strtok(line, TOK_DELIM);
-    while (token != NULL) {
-        tokens[position] = token;
-        position++;
-        if (position >= bufsize) {
-            bufsize += TOK_BUFSIZE;
-            tokens = realloc(tokens, bufsize * sizeof(char *));
-            if (!tokens) {
-                fprintf(stderr, "Reallocation error\n");
-                exit(EXIT_FAILURE);
-            }
-        }
-
-        token = strtok(NULL, TOK_DELIM);
-    }
-    tokens[position] = NULL;
-    return tokens;
-}
-
 void prompt(int exit_code) {
     char *cwd = getcwd(NULL, 0);
     char *green = "\033[32m";
@@ -125,15 +92,10 @@ void shell_loop() {
     while (1) {
         prompt(exit_info.exit_code);
         char *line = read_line();
-        char **args = split_line(line);
-        exit_info = shell_execute(args, exit_info.exit_code);
-
-        free(line);
-        free(args);
-
-        if (exit_info.terminate) {
-            break;
-        }
+        Token_Info ti = tokenize(line, strlen(line));
+        AST* expression = parse(ti); 
+        ast_print(expression);
+        printf("\n");
     }
 }
 

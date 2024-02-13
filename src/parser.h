@@ -46,5 +46,6 @@ struct AST {
 };
 
 AST* parse(Token_Info ti);
+void ast_print(AST* ptr);
 
 #endif
