@@ -1,10 +1,10 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
 #include "utils.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #define HOME_PATH "/home/sebastian"
-ExitInfo cbsh_cd(char** args) {
+ExitInfo cbsh_cd(char **args) {
     ExitInfo exit_info = exit_info_init();
     char *arg;
     if (args[1] == NULL) {

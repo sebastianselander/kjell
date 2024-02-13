@@ -2,10 +2,7 @@
 #define UTILS_H
 
 #include <stdlib.h>
-
-#define true 1
-#define false 0
-#define bool char
+#include <stdbool.h>
 
 typedef struct ExitInfo ExitInfo;
 
