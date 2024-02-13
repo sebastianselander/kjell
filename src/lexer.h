@@ -2,6 +2,7 @@
 #define LEXER_H
 
 #include <stdlib.h>
+#include <stdbool.h>
 
 typedef enum {
     TOKEN_SEMICOLON = 0,
@@ -34,6 +35,11 @@ typedef struct {
 
 } Token_Info;
 
+typedef struct {
+    Token *tokens;
+    size_t tokens_len;
+} TokenL;
+
 Lexer lexer_new(const char* content, size_t content_len);
 Token lexer_next(Lexer *lexer);
 
@@ -43,5 +49,6 @@ void lexer_print_state(Lexer lexer);
 void token_print(Token token);
 bool lexer_continue(Lexer *lexer);
 void token_free(Token *ptr);
+char* token_show(Token_Kind tok);
 
 #endif
