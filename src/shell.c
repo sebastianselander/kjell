@@ -1,13 +1,13 @@
 #include "shell.h"
-#include <string.h>
 #include "builtins.h"
-#include "utils.h"
 #include "lexer.h"
 #include "parser.h"
+#include "utils.h"
+#include <string.h>
 
 typedef struct ExitInfo ExitInfo;
 
-char* read_line() {
+char *read_line() {
     char *line = NULL;
     size_t bufsize = 0;
 
@@ -24,11 +24,11 @@ char* read_line() {
 
 #define TOK_DELIM " \r\t\n\a"
 #define TOK_BUFSIZE 64
-char** split_line(char* line) {
+char **split_line(char *line) {
     int bufsize = TOK_BUFSIZE;
     int position = 0;
 
-    char **tokens = malloc(sizeof(char*) * bufsize);
+    char **tokens = malloc(sizeof(char *) * bufsize);
     char *token;
 
     if (!tokens) {
@@ -42,7 +42,7 @@ char** split_line(char* line) {
         position++;
         if (position >= bufsize) {
             bufsize += TOK_BUFSIZE;
-            tokens = realloc(tokens, bufsize * sizeof(char*));
+            tokens = realloc(tokens, bufsize * sizeof(char *));
             if (!tokens) {
                 fprintf(stderr, "Reallocation error\n");
                 exit(EXIT_FAILURE);
@@ -77,11 +77,11 @@ ExitInfo shell_launch(char **args, int exit_code) {
         negate = true;
         // shift all elements down one step, removing the bang
         for (int i = 1;; i++) {
-            args[i-1] = args[i];
+            args[i - 1] = args[i];
             if (args[i] == NULL) {
                 break;
             }
-        } 
+        }
     }
 
     pid = fork();
@@ -137,6 +137,4 @@ void shell_loop() {
     }
 }
 
-int main(int argc, char *argv[]) {
-    shell_loop();
-}
+int main(int argc, char *argv[]) { shell_loop(); }
