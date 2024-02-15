@@ -6,10 +6,13 @@
 
 typedef struct AST AST;
 
-typedef struct Parse {
-    AST *ast;
-    char *rest;
-} Parse;
+typedef struct {
+    Tokens source;
+    AST* ast;
+    size_t cursor;
+    bool hasErrored;
+    char* error_msg;
+} Parser;
 
 struct AST {
     enum {
@@ -22,7 +25,7 @@ struct AST {
     } tag;
     union {
         struct AST_TEXT {
-            TokenL tokenl;
+            Tokens tokens;
         } AST_TEXT;
         struct AST_BANG {
             AST *shell;
@@ -45,7 +48,8 @@ struct AST {
     } data;
 };
 
-AST* parse(Token_Info ti);
+Parser parser_new(Tokens source);
+void parse(Parser* p);
 void ast_print(AST* ptr);
 
 #endif

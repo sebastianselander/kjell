@@ -2,17 +2,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "utils.h"
 #include "lexer.h"
 #include "parser.h"
+#include "utils.h"
 
 #define AST_NEW(tag, ...)                                                      \
     ast_new((AST){tag, {.tag = (struct tag){__VA_ARGS__}}})
 
-#define DEBUG false
-#define BUFSZ 1024
+#define DEBUG true
+#define BUFFERSIZE_INIT 1024
 
 int i, error = 0;
+int i_max = 0;
 
 void debug(char *string, int i) {
     if (DEBUG && i == -1) {
@@ -23,10 +24,10 @@ void debug(char *string, int i) {
 }
 
 /* TODO:
+    - Refactor / rewrite. Way too ad-hoccy
     - Implement automatically resizing buffers instead of exiting on reaching
    cap
 */
-
 
 AST *ast_new(AST ast) {
     AST *ptr = malloc(sizeof(AST));
@@ -37,57 +38,55 @@ AST *ast_new(AST ast) {
 }
 
 void ast_print(AST *ptr) {
+    if (!ptr) {
+        printf("Empty ast");
+        return;
+    }
     AST ast = *ptr;
     switch (ast.tag) {
     case AST_TEXT: {
-        debug("TEXT", -1);
         struct AST_TEXT data = ast.data.AST_TEXT;
-        TokenL tokenl = data.tokenl;
-        for (int i = 0; i < tokenl.tokens_len; i++) {
+        Tokens tokens = data.tokens;
+        for (int i = 0; i < tokens.tokens_len; i++) {
             if (i != 0)
                 printf(" ");
-            print_str(tokenl.tokens[i].text, tokenl.tokens[i].text_len);
+            print_str(tokens.tokens[i].text, tokens.tokens[i].text_len);
         }
         return;
     }
     case AST_BANG: {
-        debug("BANG", -1);
         struct AST_BANG data = ast.data.AST_BANG;
-        printf("! [");
-        ast_print(data.shell);
-        printf("]");
-        return;
-    }
-    case AST_SUBSHELL: {
-        debug("SUBSHELL", -1);
-        struct AST_SUBSHELL data = ast.data.AST_SUBSHELL;
-        printf("(");
+        printf("! (");
         ast_print(data.shell);
         printf(")");
         return;
     }
-    case AST_AND: {
-        debug("AND", -1);
-        struct AST_AND data = ast.data.AST_AND;
+    case AST_SUBSHELL: {
+        struct AST_SUBSHELL data = ast.data.AST_SUBSHELL;
         printf("[");
+        ast_print(data.shell);
+        printf("]");
+        return;
+    }
+    case AST_AND: {
+        struct AST_AND data = ast.data.AST_AND;
+        printf("(");
         ast_print(data.left);
         printf(" && ");
         ast_print(data.right);
-        printf("]");
+        printf(")");
         return;
     }
     case AST_OR: {
-        debug("OR", -1);
         struct AST_OR data = ast.data.AST_OR;
-        printf("[");
+        printf("(");
         ast_print(data.left);
         printf(" || ");
         ast_print(data.right);
-        printf("]");
+        printf(")");
         return;
     }
     case AST_SEQ: {
-        debug("SEQ", -1);
         struct AST_SEQ data = ast.data.AST_SEQ;
         ast_print(data.left);
         printf("; ");
@@ -98,13 +97,15 @@ void ast_print(AST *ptr) {
 }
 
 void ast_free(AST *ptr) {
-    if (ptr == NULL)
+    if (ptr == NULL) {
         printf("NULL POINTER\n");
+        return;
+    }
     AST ast = *ptr;
     switch (ast.tag) {
     case AST_TEXT: {
         struct AST_TEXT data = ast.data.AST_TEXT;
-        token_free(data.tokenl.tokens);
+        tokens_free(data.tokens);
         break;
     }
     case AST_BANG: {
@@ -162,168 +163,171 @@ subshell   ::= [ident] | "(" expression ")"
 
 */
 
-Token *input;
-
-AST *EXPRESSION();
-AST *SEQUENCE();
-AST *OR();
-AST *AND();
-AST *BANG();
-AST *SUBSHELL();
-
-void check_mem_overflow(int i, int cap) {
-    if (i >= cap) {
-        fprintf(stderr, "Buffer out of memory");
-        exit(EXIT_FAILURE);
-    }
+Parser parser_new(Tokens tokens) {
+    Parser parser = {.source = tokens,
+                     .cursor = 0,
+                     .ast = NULL,
+                     .hasErrored = false,
+                     .error_msg = "BUG: this text should not be shown"};
+    return parser;
 }
 
-TokenL many(Token_Kind tk) {
-    int bufsize = BUFSZ;
-    Token *array = malloc(sizeof(Token) * bufsize);
-    int j = i;
-    while (input[i].kind == tk) {
-        check_mem_overflow(i - j, bufsize);
-        array[i - j] = input[i];
-        i++;
-    }
+Token parser_peek(Parser *p) { return p->source.tokens[p->cursor]; }
 
-    TokenL tokenl = {.tokens = array, .tokens_len = i - j};
-    return tokenl;
+bool parser_isAtEnd(Parser *p) { return parser_peek(p).type == TOKEN_EOF; }
+
+Token parser_previous(Parser *p) { return p->source.tokens[p->cursor - 1]; }
+
+Token parser_advance(Parser *p) {
+    if (!parser_isAtEnd(p))
+        p->cursor++;
+    return parser_previous(p);
 }
 
-bool optional(Token_Kind tk) {
-    if (input[i].kind == tk) {
+Token parser_next(Parser *p) { return p->source.tokens[p->cursor + 1]; }
+
+bool parser_check(Parser *p, Token_Type type) {
+    if (parser_isAtEnd(p))
+        return false;
+    return parser_peek(p).type == type;
+}
+
+bool parser_match(Parser *p, Token_Type tok) {
+    if (parser_check(p, tok)) {
+        parser_advance(p);
         return true;
     }
     return false;
 }
 
-Token_Kind peek() { return input[i].kind; }
-
-bool try_match(Token_Kind tk) {
-    Token_Kind current_token = peek();
-    if (!(current_token == tk)) {
-        return false;
+void consume(Parser *p, Token_Type tok) {
+    Token_Type current = parser_peek(p).type;
+    if (parser_check(p, tok)) {
+        parser_advance(p);
+    } else {
+        p->hasErrored = true;
+        char msg[100];
+        sprintf(msg, "Expected %s, but got %s\n", token_type_to_str_pretty(current),
+                token_type_to_str_pretty(tok));
+        p->error_msg = msg;
     }
-    i++;
-    return true;
 }
 
-bool match(Token_Kind tk) {
-    Token_Kind current_token = peek();
-    if (!(current_token == tk)) {
-        printf("Expected: %s, got: %s\n", token_show(tk),
-               token_show(current_token));
-        /* token_print(input[i]); */
-        error = 1;
-        return false;
+AST *Or(Parser *p);
+AST *Sequence(Parser *p);
+AST *Bang(Parser *p);
+AST *Subshell(Parser *p);
+
+void parser_parse(Parser *p) {
+    AST *expression = Sequence(p);
+    if (p->hasErrored) {
+        p->ast = NULL;
+        return;
     }
-    i++;
-    return true;
+    Token_Type current = parser_peek(p).type;
+    if (current != TOKEN_EOF) {
+        p->hasErrored = true;
+        char* msg = malloc(sizeof(char) * 100);
+        sprintf(msg, "Expected %s, but got %s\n", token_type_to_str_pretty(TOKEN_EOF),
+                token_type_to_str_pretty(current));
+        p->error_msg = msg;
+        p->ast = NULL;
+        return;
+    }
+    p->ast = expression;
 }
 
-/*
-Removing left recursion, Nyqvist style:
-expression ::= seq;
-seq        ::= or ";" or;
-or         ::= and "||" and;
-and        ::= bang "&&" bang;
-bang       ::= "!" subshell;
-subshell   ::= [ident] | "(" expression ")"
-
-*/
-
-/*
-    Return: null if input is empty
-*/
-AST *EXPRESSION() {
-    if (peek() == TOKEN_EOF)
+AST *Sequence(Parser *p) {
+    printf("Sequence\n");
+    if (p->hasErrored)
         return NULL;
-    return SEQUENCE();
-}
-
-AST *SEQUENCE() {
-    if (DEBUG)
-        printf("SEQUENCE - parsing token: %s\n", token_show(peek()));
-    AST *expr = OR();
-    while (peek() == TOKEN_SEMICOLON) {
-        i++;
-        AST *right = OR();
+    AST *expr = Bang(p);
+    while (parser_match(p, TOKEN_SEMICOLON)) {
+        AST *right = Bang(p);
         expr = AST_NEW(AST_SEQ, expr, right);
     }
-    return expr;
-}
 
-AST *OR() {
-    if (DEBUG)
-        printf("OR - parsing token: %s\n", token_show(peek()));
-    AST *expr = AND();
-    while (peek() == TOKEN_OR) {
-        i++;
-        AST *right = AND();
+    while (parser_match(p, TOKEN_OR)) {
+        AST *right = Bang(p);
         expr = AST_NEW(AST_OR, expr, right);
     }
-    return expr;
-}
 
-AST *AND() {
-    if (DEBUG)
-        printf("AND - parsing token: %s\n", token_show(peek()));
-    AST *expr = BANG();
-    while (peek() == TOKEN_AND) {
-        i++;
-        AST *right = BANG();
+    while (parser_match(p, TOKEN_AND)) {
+        AST *right = Bang(p);
         expr = AST_NEW(AST_AND, expr, right);
     }
     return expr;
 }
 
-AST *BANG() {
-    if (DEBUG)
-        printf("BANG - parsing token: %s\n", token_show(peek()));
-    if (try_match(TOKEN_BANG)) {
-        AST *expr = BANG();
-        AST *bang = AST_NEW(AST_BANG, expr);
-        return bang;
+AST *Bang(Parser *p) {
+    printf("Bang\n");
+    if (p->hasErrored)
+        return NULL;
+    if (parser_match(p, TOKEN_BANG)) {
+        AST *bang = Bang(p);
+        AST *expr = AST_NEW(AST_BANG, bang);
+        return expr;
+    } else {
+        return Subshell(p);
     }
-    return SUBSHELL();
 }
 
-AST *SUBSHELL() {
-    if (DEBUG)
-        printf("SUBSHELL - parsing token: %s\n", token_show(peek()));
-    if (peek() == (TOKEN_LPAREN)) {
-        i++;
-        AST *expr = EXPRESSION();
-        AST *subshell = AST_NEW(AST_SUBSHELL, expr);
-        match(TOKEN_RPAREN);
-        return subshell;
-    }
-    if (peek() == TOKEN_TEXT) {
-        int tokens_count = 0;
-        // TODO: Resize buffer
-        Token *tokens = malloc(sizeof(Token) * BUFSZ);
-        while (peek() == TOKEN_TEXT) {
-            tokens[tokens_count] = input[i];
-            tokens_count++;
-            i++;
-        }
-        TokenL tokenls = {.tokens = tokens, .tokens_len = tokens_count};
-        AST *expr = AST_NEW(AST_TEXT, tokenls);
+AST *Subshell(Parser *p) {
+    printf("Subshell\n");
+    if (parser_match(p, TOKEN_LPAREN)) {
+        AST *subshell = Sequence(p);
+        consume(p, TOKEN_RPAREN);
+        if (p->hasErrored)
+            return NULL;
+        AST *expr = AST_NEW(AST_SUBSHELL, subshell);
         return expr;
     }
-    return EXPRESSION();
+    Token_Type current = parser_peek(p).type;
+    if (current == TOKEN_TEXT) {
+        Token *token = malloc(sizeof(Token) * 1024);
+        int i = 0;
+        for (; parser_match(p, TOKEN_TEXT); i++) {
+            token[i] = parser_previous(p);
+        }
+        if (i == 0) {
+            p->hasErrored = true;
+            p->error_msg = "Expected text, but got none";
+            return NULL;
+        } else {
+            Tokens tokens = {.tokens = token, .tokens_len = i};
+            AST *expr = AST_NEW(AST_TEXT, tokens);
+            return expr;
+        }
+    }
+    p->hasErrored = true;
+    char msg[100];
+    sprintf(msg, "Expected %s, but got %s\n", token_type_to_str_pretty(TOKEN_EOF),
+            token_type_to_str_pretty(current));
+    p->error_msg = msg;
+    return NULL;
 }
 
-AST* parse(Token_Info ti) {
-    Token* tokens = ti.tokens;
-    size_t tokens_len = ti.tokens_len;
-
-    i = 0;
-    input = tokens;
-
-    AST* expr = EXPRESSION();
-    i = 0;
-    return expr;
+int main() {
+    char *str = "(cd))";
+    size_t input_len = strlen(str);
+    String input = {.text = str, .text_len = input_len};
+    Lexer l = lexer_new(input);
+    printf("Scanning...\n");
+    lexer_scan(&l);
+    printf("Scanning done!\n");
+    Tokens tokens = l.tokens;
+    /* tokens_print(tokens.tokens); */
+    Parser p = parser_new(tokens);
+    printf("Parsing...\n");
+    parser_parse(&p);
+    printf("Parsing done!\n");
+    if (p.hasErrored) {
+        printf("%s", p.error_msg);
+    } else {
+        AST *expression = p.ast;
+        ast_print(expression);
+        printf("\n");
+        tokens_free(tokens);
+        ast_free(expression);
+    }
 }
