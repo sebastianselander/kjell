@@ -37,7 +37,7 @@ void prompt(int exit_code) {
 
 ExitInfo shell_launch(char **args, int exit_code) {
     pid_t pid;
-    int exit_c;
+    int exit_c = exit_code;
     bool negate = false;
 
     if (strcmp(args[0], "!") == 0) {
@@ -96,4 +96,32 @@ void shell_loop() {
     }
 }
 
-int main(int argc, char *argv[]) { shell_loop(); }
+void test_parser() {
+    char *str = "(cd))";
+    size_t input_len = strlen(str);
+    String input = {.text = str, .text_len = input_len};
+    Lexer l = lexer_new(input);
+    printf("Scanning...\n");
+    lexer_scan(&l);
+    printf("Scanning done!\n");
+    Tokens tokens = l.tokens;
+    /* tokens_print(tokens.tokens); */
+    Parser p = parser_new(tokens);
+    printf("Parsing...\n");
+    parser_parse(&p);
+    printf("Parsing done!\n");
+    if (p.hasErrored) {
+        printf("%s", p.error_msg);
+    } else {
+        AST *expression = p.ast;
+        ast_print(expression);
+        printf("\n");
+        tokens_free(tokens);
+        ast_free(expression);
+    }
+}
+
+int main(void) {
+    test_parser();
+    shell_loop();
+}

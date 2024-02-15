@@ -186,19 +186,3 @@ void tokens_print(Token *tokens) {
     print_str(token.text, token.text_len);
     printf("'\n    text_len: %d\n}\n", (int)token.text_len);
 }
-
-/**/
-/* int main() { */
-/*     String str = {.text = malloc(1024), .text_len = 0}; */
-/*     str.text = "cd      .. || true || true"; */
-/*     str.text_len = strlen(str.text); */
-/*     Lexer l = lexer_new(str); */
-/*     lexer_scan(&l); */
-/*     for (int i = 0; i < l.tokens.tokens_len; i++) { */
-/*         Token t = l.tokens.tokens[i]; */
-/*         if (t.type == TOKEN_SPACE) */
-/*             continue; */
-/*         printf("%s\n", token_type_str[t.type]); */
-/*     } */
-/*     lexer_free(l); */
-/* } */

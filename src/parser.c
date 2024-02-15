@@ -47,7 +47,7 @@ void ast_print(AST *ptr) {
     case AST_TEXT: {
         struct AST_TEXT data = ast.data.AST_TEXT;
         Tokens tokens = data.tokens;
-        for (int i = 0; i < tokens.tokens_len; i++) {
+        for (size_t i = 0; i < tokens.tokens_len; i++) {
             if (i != 0)
                 printf(" ");
             print_str(tokens.tokens[i].text, tokens.tokens[i].text_len);
@@ -206,7 +206,7 @@ void consume(Parser *p, Token_Type tok) {
         parser_advance(p);
     } else {
         p->hasErrored = true;
-        char msg[100];
+        char* msg = malloc(sizeof(char) * 1024);
         sprintf(msg, "Expected %s, but got %s\n", token_type_to_str_pretty(current),
                 token_type_to_str_pretty(tok));
         p->error_msg = msg;
@@ -305,29 +305,4 @@ AST *Subshell(Parser *p) {
             token_type_to_str_pretty(current));
     p->error_msg = msg;
     return NULL;
-}
-
-int main() {
-    char *str = "(cd))";
-    size_t input_len = strlen(str);
-    String input = {.text = str, .text_len = input_len};
-    Lexer l = lexer_new(input);
-    printf("Scanning...\n");
-    lexer_scan(&l);
-    printf("Scanning done!\n");
-    Tokens tokens = l.tokens;
-    /* tokens_print(tokens.tokens); */
-    Parser p = parser_new(tokens);
-    printf("Parsing...\n");
-    parser_parse(&p);
-    printf("Parsing done!\n");
-    if (p.hasErrored) {
-        printf("%s", p.error_msg);
-    } else {
-        AST *expression = p.ast;
-        ast_print(expression);
-        printf("\n");
-        tokens_free(tokens);
-        ast_free(expression);
-    }
 }

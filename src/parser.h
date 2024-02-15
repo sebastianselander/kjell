@@ -51,5 +51,7 @@ struct AST {
 Parser parser_new(Tokens source);
 void parse(Parser* p);
 void ast_print(AST* ptr);
+void ast_free(AST* ptr);
+void parser_parse(Parser* parser);
 
 #endif

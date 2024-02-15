@@ -16,7 +16,7 @@ ExitInfo exit_info_init() {
 }
 
 void print_str(const char *text, size_t text_len) {
-    for (int i = 0; i < text_len; i++) {
+    for (size_t i = 0; i < text_len; i++) {
         printf("%c", text[i]);
     }
 }

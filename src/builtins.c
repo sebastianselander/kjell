@@ -19,13 +19,13 @@ ExitInfo cbsh_cd(char **args) {
     return exit_info;
 }
 
-ExitInfo cbsh_exit(char **args) {
+ExitInfo cbsh_exit(void) {
     ExitInfo exit_info = exit_info_init();
     exit_info.terminate = true;
     return exit_info;
 }
 
-ExitInfo cbsh_help(char **args) {
+ExitInfo cbsh_help(void) {
     ExitInfo exit_info = exit_info_init();
     printf("help!\n");
     return exit_info;
