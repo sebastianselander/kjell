@@ -24,7 +24,6 @@ void debug(char *string, int i) {
 }
 
 /* TODO:
-    - Refactor / rewrite. Way too ad-hoccy
     - Implement automatically resizing buffers instead of exiting on reaching
    cap
 */
@@ -97,10 +96,7 @@ void ast_print(AST *ptr) {
 }
 
 void ast_free(AST *ptr) {
-    if (ptr == NULL) {
-        printf("NULL POINTER\n");
-        return;
-    }
+    if (ptr == NULL) return;
     AST ast = *ptr;
     switch (ast.tag) {
     case AST_TEXT: {
