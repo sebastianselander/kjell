@@ -92,10 +92,7 @@ void shell_loop() {
     while (1) {
         prompt(exit_info.exit_code);
         char *line = read_line();
-        Token_Info ti = tokenize(line, strlen(line));
-        AST* expression = parse(ti); 
-        ast_print(expression);
-        printf("\n");
+        printf("%s\n", line);
     }
 }
 

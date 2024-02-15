@@ -40,12 +40,20 @@ typedef struct {
 } Token;
 
 typedef struct {
-    String source;
-    size_t cursor;
     Token* tokens;
     size_t tokens_len;
+} Tokens;
+
+typedef struct {
+    String source;
+    size_t cursor;
+    Tokens tokens;
     bool hasErrored;
     char* error_msg;
 } Lexer;
+
+Lexer lexer_new(String string);
+void scan(Lexer* l);
+void tokens_free(Tokens tokens);
 
 #endif

@@ -25,3 +25,7 @@ void println_str(const char* text, size_t text_len) {
     print_str(text, text_len);
     printf("\n");
 }
+
+void string_free(String string) {
+    free((char*) string.text);
+}

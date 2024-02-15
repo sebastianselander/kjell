@@ -26,8 +26,8 @@ char peek(Lexer *l) { return l->source.text[l->cursor]; }
 bool isAlpha(char c) { return isalpha(c) || c == '/' || c == '.'; }
 
 void lexer_addToken(Lexer *l, Token token) {
-    l->tokens[l->tokens_len] = token;
-    l->tokens_len += 1;
+    l->tokens.tokens[l->tokens.tokens_len] = token;
+    l->tokens.tokens_len += 1;
 }
 
 void lexer_error(Lexer *l, char *msg) {
@@ -43,10 +43,11 @@ Token eof() {
 Lexer lexer_new(String string) {
     Lexer l = {.source = string,
                .cursor = 0,
-               .tokens = malloc(BUFFERSIZE_INIT),
-               .tokens_len = 0,
+               .tokens.tokens = malloc(BUFFERSIZE_INIT),
+               .tokens.tokens_len = 0,
                .hasErrored = false,
-               .error_msg = ""};
+               .error_msg = "",
+    };
     return l;
 }
 
@@ -108,14 +109,25 @@ void lexer_scan(Lexer *l) {
     lexer_addToken(l, eof());
 }
 
+void tokens_free(Tokens tokens) {
+    Token* ptr = tokens.tokens;
+    free(ptr);
+}
+
+void lexer_free(Lexer l) {
+    tokens_free(l.tokens);
+}
+
 int main() {
-    String str = { .text = "cd      .. || true || true", .text_len = 0};
+    String str = { .text = malloc(1024), .text_len = 0 };
+    str.text = "cd      .. || true || true";
     str.text_len = strlen(str.text);
     Lexer l = lexer_new(str);
     lexer_scan(&l);
-    for (int i = 0; i < l.tokens_len; i++) {
-        Token t = l.tokens[i];
+    for (int i = 0; i < l.tokens.tokens_len; i++) {
+        Token t = l.tokens.tokens[i];
         if (t.kind == TOKEN_SPACE) continue;
         printf("%s\n", token_type_str[t.kind]);
     }
+    lexer_free(l);
 }
