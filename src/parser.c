@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "utils.h"
 #include "lexer.h"
 #include "parser.h"
+#include "utils.h"
 
 #define AST_NEW(tag, ...)                                                      \
     ast_new((AST){tag, {.tag = (struct tag){__VA_ARGS__}}})
@@ -25,9 +25,9 @@ void debug(char *string, int i) {
 
 /* TODO:
     - Refactor / rewrite. Way too ad-hoccy
-    - Implement automatically resizing buffers instead of exiting on reaching cap
+    - Implement automatically resizing buffers instead of exiting on reaching
+   cap
 */
-
 
 AST *ast_new(AST ast) {
     AST *ptr = malloc(sizeof(AST));
@@ -38,6 +38,10 @@ AST *ast_new(AST ast) {
 }
 
 void ast_print(AST *ptr) {
+    if (!ptr) {
+        printf("Empty ast");
+        return;
+    }
     AST ast = *ptr;
     switch (ast.tag) {
     case AST_TEXT: {
@@ -88,13 +92,15 @@ void ast_print(AST *ptr) {
         printf("; ");
         ast_print(data.right);
         return;
-        }
+    }
     }
 }
 
 void ast_free(AST *ptr) {
-    if (ptr == NULL)
+    if (ptr == NULL) {
         printf("NULL POINTER\n");
+        return;
+    }
     AST ast = *ptr;
     switch (ast.tag) {
     case AST_TEXT: {
@@ -158,12 +164,170 @@ subshell   ::= [ident] | "(" expression ")"
 */
 
 Parser parser_new(Tokens tokens) {
-    Parser parser = {
-        .source.tokens_len = 0,
-        .source.tokens = malloc(BUFFERSIZE_INIT),
-        .ast = NULL,
-        .hasErrored = false,
-        .error_msg = ""
-    };
+    Parser parser = {.source = tokens,
+                     .cursor = 0,
+                     .ast = NULL,
+                     .hasErrored = false,
+                     .error_msg = "BUG: this text should not be shown"};
     return parser;
+}
+
+Token parser_peek(Parser *p) { return p->source.tokens[p->cursor]; }
+
+bool parser_isAtEnd(Parser *p) { return parser_peek(p).type == TOKEN_EOF; }
+
+Token parser_previous(Parser *p) { return p->source.tokens[p->cursor - 1]; }
+
+Token parser_advance(Parser *p) {
+    if (!parser_isAtEnd(p))
+        p->cursor++;
+    return parser_previous(p);
+}
+
+Token parser_next(Parser *p) { return p->source.tokens[p->cursor + 1]; }
+
+bool parser_check(Parser *p, Token_Type type) {
+    if (parser_isAtEnd(p))
+        return false;
+    return parser_peek(p).type == type;
+}
+
+bool parser_match(Parser *p, Token_Type tok) {
+    if (parser_check(p, tok)) {
+        parser_advance(p);
+        return true;
+    }
+    return false;
+}
+
+void consume(Parser *p, Token_Type tok) {
+    Token_Type current = parser_peek(p).type;
+    if (parser_check(p, tok)) {
+        parser_advance(p);
+    } else {
+        p->hasErrored = true;
+        char msg[100];
+        sprintf(msg, "Expected %s, but got %s\n", token_type_to_str_pretty(current),
+                token_type_to_str_pretty(tok));
+        p->error_msg = msg;
+    }
+}
+
+AST *Or(Parser *p);
+AST *Sequence(Parser *p);
+AST *Bang(Parser *p);
+AST *Subshell(Parser *p);
+
+void parser_parse(Parser *p) {
+    AST *expression = Sequence(p);
+    if (p->hasErrored) {
+        p->ast = NULL;
+        return;
+    }
+    Token_Type current = parser_peek(p).type;
+    if (current != TOKEN_EOF) {
+        p->hasErrored = true;
+        char* msg = malloc(sizeof(char) * 100);
+        sprintf(msg, "Expected %s, but got %s\n", token_type_to_str_pretty(TOKEN_EOF),
+                token_type_to_str_pretty(current));
+        p->error_msg = msg;
+        p->ast = NULL;
+        return;
+    }
+    p->ast = expression;
+}
+
+AST *Sequence(Parser *p) {
+    printf("Sequence\n");
+    if (p->hasErrored)
+        return NULL;
+    AST *expr = Bang(p);
+    while (parser_match(p, TOKEN_SEMICOLON)) {
+        AST *right = Bang(p);
+        expr = AST_NEW(AST_SEQ, expr, right);
+    }
+
+    while (parser_match(p, TOKEN_OR)) {
+        AST *right = Bang(p);
+        expr = AST_NEW(AST_OR, expr, right);
+    }
+
+    while (parser_match(p, TOKEN_AND)) {
+        AST *right = Bang(p);
+        expr = AST_NEW(AST_AND, expr, right);
+    }
+    return expr;
+}
+
+AST *Bang(Parser *p) {
+    printf("Bang\n");
+    if (p->hasErrored)
+        return NULL;
+    if (parser_match(p, TOKEN_BANG)) {
+        AST *bang = Bang(p);
+        AST *expr = AST_NEW(AST_BANG, bang);
+        return expr;
+    } else {
+        return Subshell(p);
+    }
+}
+
+AST *Subshell(Parser *p) {
+    printf("Subshell\n");
+    if (parser_match(p, TOKEN_LPAREN)) {
+        AST *subshell = Sequence(p);
+        consume(p, TOKEN_RPAREN);
+        if (p->hasErrored)
+            return NULL;
+        AST *expr = AST_NEW(AST_SUBSHELL, subshell);
+        return expr;
+    }
+    Token_Type current = parser_peek(p).type;
+    if (current == TOKEN_TEXT) {
+        Token *token = malloc(sizeof(Token) * 1024);
+        int i = 0;
+        for (; parser_match(p, TOKEN_TEXT); i++) {
+            token[i] = parser_previous(p);
+        }
+        if (i == 0) {
+            p->hasErrored = true;
+            p->error_msg = "Expected text, but got none";
+            return NULL;
+        } else {
+            Tokens tokens = {.tokens = token, .tokens_len = i};
+            AST *expr = AST_NEW(AST_TEXT, tokens);
+            return expr;
+        }
+    }
+    p->hasErrored = true;
+    char msg[100];
+    sprintf(msg, "Expected %s, but got %s\n", token_type_to_str_pretty(TOKEN_EOF),
+            token_type_to_str_pretty(current));
+    p->error_msg = msg;
+    return NULL;
+}
+
+int main() {
+    char *str = "(cd))";
+    size_t input_len = strlen(str);
+    String input = {.text = str, .text_len = input_len};
+    Lexer l = lexer_new(input);
+    printf("Scanning...\n");
+    lexer_scan(&l);
+    printf("Scanning done!\n");
+    Tokens tokens = l.tokens;
+    /* tokens_print(tokens.tokens); */
+    Parser p = parser_new(tokens);
+    printf("Parsing...\n");
+    parser_parse(&p);
+    printf("Parsing done!\n");
+    if (p.hasErrored) {
+        printf("%s", p.error_msg);
+    } else {
+        AST *expression = p.ast;
+        ast_print(expression);
+        printf("\n");
+        tokens_free(tokens);
+        ast_free(expression);
+    }
 }

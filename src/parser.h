@@ -9,6 +9,7 @@ typedef struct AST AST;
 typedef struct {
     Tokens source;
     AST* ast;
+    size_t cursor;
     bool hasErrored;
     char* error_msg;
 } Parser;
