@@ -8,3 +8,6 @@ clean:
 
 parser:
 	cd src && make parser
+
+lexer:
+	cd src && make lexer

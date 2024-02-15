@@ -9,3 +9,6 @@ clean:
 parser:
 	gcc -Wall -pedantic utils.c lexer.c parser.c -o bin/parser && ./bin/parser
 
+lexer:
+	gcc -Wall -pedantic utils.c lexer.c -o bin/lexer && ./bin/lexer
+

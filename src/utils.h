@@ -6,6 +6,11 @@
 
 typedef struct ExitInfo ExitInfo;
 
+typedef struct {
+    const char* text;
+    size_t text_len;
+} String;
+
 void normalize_status(int *status);
 
 ExitInfo exit_info_init();
