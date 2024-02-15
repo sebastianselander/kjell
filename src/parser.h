@@ -50,8 +50,10 @@ struct AST {
 
 Parser parser_new(Tokens source);
 void parse(Parser* p);
-void ast_print(AST* ptr);
-void ast_free(AST* ptr);
+void parser_free(Parser p);
 void parser_parse(Parser* parser);
+void ast_print(AST* ptr);
+// Left out for now as parser_free also frees the ast
+/* void ast_free(AST* ptr); */
 
 #endif

@@ -105,7 +105,7 @@ void lexer_scan(Lexer *l) {
 
 void tokens_free(Tokens tokens) {
     Token *ptr = tokens.tokens;
-    free(ptr);
+    if (ptr) free(ptr);
 }
 
 void lexer_free(Lexer l) { tokens_free(l.tokens); }

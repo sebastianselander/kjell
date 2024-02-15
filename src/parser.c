@@ -172,6 +172,18 @@ Parser parser_new(Tokens tokens) {
     return parser;
 }
 
+void parser_free(Parser p) {
+    if (p.error_msg) {
+        free(p.error_msg);
+    }
+    if (p.ast) {
+        ast_free(p.ast);
+    }
+    if (p.source.tokens) {
+        tokens_free(p.source);
+    }
+}
+
 Token parser_peek(Parser *p) { return p->source.tokens[p->cursor]; }
 
 bool parser_isAtEnd(Parser *p) { return parser_peek(p).type == TOKEN_EOF; }
@@ -238,7 +250,6 @@ void parser_parse(Parser *p) {
 }
 
 AST *Sequence(Parser *p) {
-    printf("Sequence\n");
     if (p->hasErrored)
         return NULL;
     AST *expr = Bang(p);
@@ -260,7 +271,6 @@ AST *Sequence(Parser *p) {
 }
 
 AST *Bang(Parser *p) {
-    printf("Bang\n");
     if (p->hasErrored)
         return NULL;
     if (parser_match(p, TOKEN_BANG)) {
@@ -273,7 +283,6 @@ AST *Bang(Parser *p) {
 }
 
 AST *Subshell(Parser *p) {
-    printf("Subshell\n");
     if (parser_match(p, TOKEN_LPAREN)) {
         AST *subshell = Sequence(p);
         consume(p, TOKEN_RPAREN);

@@ -101,24 +101,20 @@ void test_parser() {
     size_t input_len = strlen(str);
     String input = {.text = str, .text_len = input_len};
     Lexer l = lexer_new(input);
-    printf("Scanning...\n");
     lexer_scan(&l);
-    printf("Scanning done!\n");
     Tokens tokens = l.tokens;
-    /* tokens_print(tokens.tokens); */
+    tokens_print(tokens.tokens);
     Parser p = parser_new(tokens);
-    printf("Parsing...\n");
     parser_parse(&p);
-    printf("Parsing done!\n");
     if (p.hasErrored) {
         printf("%s", p.error_msg);
     } else {
         AST *expression = p.ast;
+        tokens_free(tokens);
         ast_print(expression);
         printf("\n");
-        tokens_free(tokens);
-        ast_free(expression);
     }
+    parser_free(p);
 }
 
 int main(void) {
