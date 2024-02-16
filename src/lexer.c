@@ -58,11 +58,11 @@ void lexer_scan(Lexer *l) {
         char c = advance(l);
         switch (c) {
         case '(': {
-            Token lparen = {.type = TOKEN_LPAREN, .text = "", .text_len = 0};
+            Token lparen = {.type = TOKEN_LPAREN, .text = "(", .text_len = 0};
             lexer_addToken(l, lparen);
         } break;
         case ')': {
-            Token rparen = {.type = TOKEN_RPAREN, .text = "", .text_len = 0};
+            Token rparen = {.type = TOKEN_RPAREN, .text = ")", .text_len = 0};
             lexer_addToken(l, rparen);
         } break;
         case '!': {
