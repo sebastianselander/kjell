@@ -13,6 +13,7 @@ char *read_line() {
 
     if (getline(&line, &bufsize, stdin) == -1) {
         if (feof(stdin)) {
+            printf("Exiting...\n");
             exit(EXIT_SUCCESS);
         } else {
             perror("read line");
@@ -91,33 +92,23 @@ void shell_loop() {
 
     while (1) {
         prompt(exit_info.exit_code);
-        char *line = read_line();
-        printf("%s\n", line);
-    }
-}
+        const char *line = read_line();
+        size_t line_len = strlen(line) - 1; //drop the newline character
+        String input = { .text = line, .text_len = line_len };
 
-void test_parser() {
-    char *str = "(cd))";
-    size_t input_len = strlen(str);
-    String input = {.text = str, .text_len = input_len};
-    Lexer l = lexer_new(input);
-    lexer_scan(&l);
-    Tokens tokens = l.tokens;
-    tokens_print(tokens.tokens);
-    Parser p = parser_new(tokens);
-    parser_parse(&p);
-    if (p.hasErrored) {
-        printf("%s", p.error_msg);
-    } else {
-        AST *expression = p.ast;
-        tokens_free(tokens);
-        ast_print(expression);
+        Parsed p = parse(input);
+        AST* expression = p.expression;
+        if (!expression) {
+            printf("ERROR: %s\n", p.error_msg);
+            ast_free(p.expression);
+            continue;
+        }
+        ast_print(p.expression);
         printf("\n");
+        ast_free(expression);
     }
-    parser_free(p);
 }
 
-int main(void) {
-    test_parser();
+int main() {
     shell_loop();
 }
