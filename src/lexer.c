@@ -10,7 +10,7 @@ bool isAtEnd(Lexer *l) { return l->cursor >= l->source.text_len; }
 
 char advance(Lexer *l) { return l->source.text[l->cursor++]; }
 
-bool match(Lexer *l, char expected) {
+bool lexer_match_char(Lexer *l, char expected) {
     if (isAtEnd(l)) {
         return false;
     }
@@ -21,7 +21,21 @@ bool match(Lexer *l, char expected) {
     return true;
 }
 
-char peek(Lexer *l) { return l->source.text[l->cursor]; }
+char lexer_peek(Lexer *l) { return l->source.text[l->cursor]; }
+
+bool lexer_match_string(Lexer *l, char *expected) {
+    size_t cursor_before = l->cursor;
+
+    for (int i = 0; i < strlen(expected); i++) {
+        if (lexer_match_char(l, expected[i])) {
+            continue;
+        }
+        l->cursor = cursor_before;
+        return false;
+    }
+    return true;
+}
+
 
 bool isAlpha(char c) { return isalpha(c) || c == '/' || c == '.'; }
 
@@ -57,6 +71,56 @@ void lexer_scan(Lexer *l) {
         int current = l->cursor;
         char c = advance(l);
         switch (c) {
+        case 'e': {
+            if (lexer_match_string(l, "xit ")) {
+                Token exit = {
+                    .type = TOKEN_EXIT, .text = "exit", .text_len = 4};
+                lexer_addToken(l, exit);
+            } else {
+                int len = 1;
+                while (isAlpha(lexer_peek(l))) {
+                    advance(l);
+                    len += 1;
+                }
+                const char *text = &l->source.text[current];
+                Token token_text = {
+                    .type = TOKEN_TEXT, .text = text, .text_len = len};
+                lexer_addToken(l, token_text);
+            }
+        } break;
+        case 'h': {
+            if (lexer_match_string(l, "elp ") || lexer_match_string (l, "elp") && isAtEnd(l)) {
+                Token help = {
+                    .type = TOKEN_HELP, .text = "help", .text_len = 4};
+                lexer_addToken(l, help);
+            } else {
+                int len = 1;
+                while (isAlpha(lexer_peek(l))) {
+                    advance(l);
+                    len += 1;
+                }
+                const char *text = &l->source.text[current];
+                Token token_text = {
+                    .type = TOKEN_TEXT, .text = text, .text_len = len};
+                lexer_addToken(l, token_text);
+            }
+        } break;
+        case 'c': {
+            if (lexer_match_string(l, "d ") || lexer_match_char(l, 'd') && isAtEnd(l)) {
+                Token cd = {.type = TOKEN_CD, .text = "cd", .text_len = 2};
+                lexer_addToken(l, cd);
+            } else {
+                int len = 1;
+                while (isAlpha(lexer_peek(l))) {
+                    advance(l);
+                    len += 1;
+                }
+                const char *text = &l->source.text[current];
+                Token token_text = {
+                    .type = TOKEN_TEXT, .text = text, .text_len = len};
+                lexer_addToken(l, token_text);
+            }
+        } break;
         case '(': {
             Token lparen = {.type = TOKEN_LPAREN, .text = "(", .text_len = 0};
             lexer_addToken(l, lparen);
@@ -74,23 +138,35 @@ void lexer_scan(Lexer *l) {
                 .type = TOKEN_SEMICOLON, .text = ";", .text_len = 1};
             lexer_addToken(l, semicolon);
         } break;
+        case ':': {
+            if (lexer_match_string(l, "q ") || lexer_match_char(l,'q') && isAtEnd(l)) {
+                Token exit = {.type = TOKEN_EXIT, .text = ":q", .text_len = 2};
+                lexer_addToken(l, exit);
+            } else {
+                l->hasErrored = true;
+                l->error_msg = "Unknown token ':'";
+                return;
+            }
+        } break;
         case '&': {
             Token and = {.type = TOKEN_AND, .text = "&&", .text_len = 2};
             Token ampersand = {
                 .type = TOKEN_AMPERSAND, .text = "&", .text_len = 1};
-            match(l, '&') ? lexer_addToken(l, and)
-                          : lexer_addToken(l, ampersand);
+            lexer_match_char(l, '&') ? lexer_addToken(l, and)
+                                     : lexer_addToken(l, ampersand);
         } break;
         case '|': {
             Token or = {.type = TOKEN_OR, .text = "||", .text_len = 2};
             Token pipe = {.type = TOKEN_PIPE, .text = "|", .text_len = 1};
-            match(l, '|') ? lexer_addToken(l, or) : lexer_addToken(l, pipe);
+            lexer_match_char(l, '|') ? lexer_addToken(l, or)
+                                     : lexer_addToken(l, pipe);
         } break;
-        case ' ': break;
+        case ' ':
+            break;
         default: {
             const char *text = &l->source.text[current];
             int len = 1;
-            while (isAlpha(peek(l))) {
+            while (isAlpha(lexer_peek(l))) {
                 advance(l);
                 len += 1;
             }
@@ -134,9 +210,14 @@ char *token_type_to_str_raw(Token_Type t) {
         return "TOKEN_BANG";
     case TOKEN_PIPE:
         return "TOKEN_PIPE";
-    default:
-        return "UNKNOWN TOKEN";
+    case TOKEN_CD:
+        return "TOKEN_CD";
+    case TOKEN_HELP:
+        return "TOKEN_HELP";
+    case TOKEN_EXIT:
+        return "TOKEN_EXIT";
     }
+    return "UNKNOWN TOKEN";
 }
 
 char *token_type_to_str_pretty(Token_Type t) {
@@ -163,9 +244,14 @@ char *token_type_to_str_pretty(Token_Type t) {
         return "'!'";
     case TOKEN_PIPE:
         return "'|'";
-    default:
-        return "UNKNOWN TOKEN";
+    case TOKEN_CD:
+        return "cd";
+    case TOKEN_HELP:
+        return "help";
+    case TOKEN_EXIT:
+        return "exit";
     }
+    return "UNKNOWN TOKEN";
 }
 
 void tokens_print(Token *tokens) {

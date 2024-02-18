@@ -8,6 +8,9 @@
 typedef enum {
     TOKEN_EOF = 0,
     TOKEN_SPACE,
+    TOKEN_EXIT,
+    TOKEN_CD,
+    TOKEN_HELP,
     TOKEN_TEXT,
     TOKEN_SEMICOLON,
     TOKEN_LPAREN,
@@ -43,7 +46,7 @@ typedef struct {
 
 Lexer lexer_new(String string);
 void lexer_scan(Lexer* l);
-void tokens_free(Tokens tokens);
 void tokens_print(Token* tokens);
+void tokens_free(Tokens tokens);
 
 #endif
