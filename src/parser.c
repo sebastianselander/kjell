@@ -169,12 +169,6 @@ Parser parser_new(Tokens tokens) {
 }
 
 void parser_free(Parser p) {
-    if (p.error_msg) {
-        free(p.error_msg);
-    }
-    if (p.ast) {
-        ast_free(p.ast);
-    }
     if (p.source.tokens) {
         tokens_free(p.source);
     }
@@ -215,7 +209,7 @@ void consume(Parser *p, Token_Type tok) {
     } else {
         p->hasErrored = true;
         char* msg = malloc(sizeof(char) * 1024);
-        sprintf(msg, "Expected %s, but got %s\n", token_type_to_str_pretty(current),
+        sprintf(msg, "Expected %s, but got %s", token_type_to_str_pretty(current),
                 token_type_to_str_pretty(tok));
         p->error_msg = msg;
     }
@@ -236,7 +230,7 @@ void parser_parse(Parser *p) {
     if (current != TOKEN_EOF) {
         p->hasErrored = true;
         char* msg = malloc(sizeof(char) * 100);
-        sprintf(msg, "Expected %s, but got %s\n", token_type_to_str_pretty(TOKEN_EOF),
+        sprintf(msg, "Expected %s, but got %s", token_type_to_str_pretty(TOKEN_EOF),
                 token_type_to_str_pretty(current));
         p->error_msg = msg;
         p->ast = NULL;
@@ -306,8 +300,30 @@ AST *Subshell(Parser *p) {
     }
     p->hasErrored = true;
     char msg[100];
-    sprintf(msg, "Expected %s, but got %s\n", token_type_to_str_pretty(TOKEN_EOF),
+    sprintf(msg, "Expected %s, but got %s", token_type_to_str_pretty(TOKEN_EOF),
             token_type_to_str_pretty(current));
     p->error_msg = msg;
     return NULL;
+}
+
+/* Caller must free the AST using ast_free when done with it. */
+Parsed parse(String input) {
+    Lexer l = lexer_new(input);
+    lexer_scan(&l);
+    Parsed parsed = {0};
+    if (l.hasErrored) {
+        parsed.error_msg = l.error_msg;
+        parsed.expression = NULL;
+        return parsed;
+    }
+    Parser p = parser_new(l.tokens);
+    parser_parse(&p);
+    AST* expression = p.ast;
+    if (p.hasErrored) {
+        parsed.error_msg = p.error_msg;
+        return parsed;
+    }
+    parsed.expression = expression;
+    parser_free(p);
+    return parsed;
 }

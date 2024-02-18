@@ -6,14 +6,6 @@
 
 typedef struct AST AST;
 
-typedef struct {
-    Tokens source;
-    AST* ast;
-    size_t cursor;
-    bool hasErrored;
-    char* error_msg;
-} Parser;
-
 struct AST {
     enum {
         AST_BANG,
@@ -48,12 +40,25 @@ struct AST {
     } data;
 };
 
+typedef struct {
+    Tokens source;
+    AST* ast;
+    size_t cursor;
+    bool hasErrored;
+    char* error_msg;
+} Parser;
+
+typedef struct {
+    AST* expression;
+    char* error_msg;
+} Parsed;
+
 Parser parser_new(Tokens source);
-void parse(Parser* p);
 void parser_free(Parser p);
 void parser_parse(Parser* parser);
 void ast_print(AST* ptr);
-// Left out for now as parser_free also frees the ast
-/* void ast_free(AST* ptr); */
+void ast_free(AST* ptr);
+
+Parsed parse(String input);
 
 #endif
