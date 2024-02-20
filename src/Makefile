@@ -6,6 +6,3 @@ build:
 clean:
 	rm -r bin/
 
-parser:
-	gcc -Wall -pedantic utils.c lexer.c parser.c -o bin/parser && ./bin/parser
-

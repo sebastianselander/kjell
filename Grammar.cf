@@ -1,8 +1,9 @@
-rules Expression ::= List ;
+rules Expression ::= Ident ;
 
 rules List ::= Bang ";" List
              | Bang "||" List
              | Bang "&&" List
+             | Bang
              ;
 
 rules Bang ::= "!" Subshell

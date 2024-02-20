@@ -1,8 +1,9 @@
 #include "shell.h"
 #include "builtins.h"
-#include "lexer.h"
-#include "parser.h"
 #include "utils.h"
+#include "gram/Parser.h"
+#include "gram/Printer.h"
+#include "gram/Absyn.h"
 #include <string.h>
 
 typedef struct ExitInfo ExitInfo;
@@ -92,11 +93,13 @@ void shell_loop() {
     while (1) {
         prompt(exit_info.exit_code);
         char *line = read_line();
-        Token_Info ti = tokenize(line, strlen(line));
-        AST* expression = parse(ti); 
-        ast_print(expression);
-        printf("\n");
+        printf("%s\n", line);
+        Expression expr = psExpression(line);
+        ppExpression(expr, 0);
+        free_Expression(expr);
     }
 }
 
-int main(int argc, char *argv[]) { shell_loop(); }
+int main(int argc, char *argv[]) {
+    shell_loop();
+}
