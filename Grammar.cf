@@ -1,0 +1,18 @@
+rules Expression ::= List ;
+
+rules List ::= Bang ";" List
+             | Bang "||" List
+             | Bang "&&" List
+             ;
+
+rules Bang ::= "!" Subshell
+             | Subshell
+             ;
+
+rules Subshell ::= "(" List ")" | Ident Args ;
+
+rules Args ::= "$(" Expression ")"
+             | [Ident]
+             ;
+
+separator Ident " " ;

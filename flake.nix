@@ -28,6 +28,7 @@
             ccls
             clang-tools
             bison
+            haskellPackages.BNFC
           ];
 
           # development.
