@@ -70,7 +70,6 @@ bool shell_execute_builtin(Shell *shell, Identifier command,
 
 void shell_execute_external(Shell *shell, Identifier command,
                             ListIdentifierLen args) {
-    printf("external\n");
     pid_t pid = fork();
     if (pid == 0) {
         char **args_list = make_argslist_execvp(command, args);
@@ -96,7 +95,6 @@ void interpret_command(Shell *shell, Identifier command,
 }
 
 ListIdentifierLen interpret_args(Shell *shell, Args args) {
-    // printf("Interpret Args\n");
     switch (args->kind) {
     case is_ArgsList: {
         ListIdentifier li = args->u.argslist_.listidentifier_;
@@ -120,7 +118,6 @@ ListIdentifierLen interpret_args(Shell *shell, Args args) {
 }
 
 void interpret_subshell(Shell *shell, Subshell subshell) {
-    // printf("Interpret Subshell\n");
     switch (subshell->kind) {
     case is_Subsh: {
     } break;
@@ -134,7 +131,6 @@ void interpret_subshell(Shell *shell, Subshell subshell) {
 }
 
 void interpret_bang(Shell *shell, Bang bang) {
-    // printf("Interpret Bang\n");
     switch (bang->kind) {
     case is_Bng: {
         Subshell subshell = bang->u.bng_.subshell_;
@@ -149,7 +145,6 @@ void interpret_bang(Shell *shell, Bang bang) {
 }
 
 void interpret_expression(Shell *shell, Expression expression) {
-    // printf("Interpret Expression\n");
     switch (expression->kind) {
     case is_Sequential: {
         Bang left = expression->u.sequential_.bang_;
