@@ -13,5 +13,5 @@ Command. Subshell ::= Identifier Args ;
 ArgsList. Args ::= [Identifier] ;
 ArgsCommand. Args ::= "$(" Expression ")" ;
 
-token Identifier (letter | '.' | '/')+;
+token Identifier (letter | '.' | '/' | '-')+;
 separator Identifier " " ;
