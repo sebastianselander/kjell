@@ -1,8 +1,8 @@
+#include "gram/Absyn.h"
 #include "utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "gram/Absyn.h"
 
 #define HOME_PATH "/home/sebastian"
 void kjell_cd(Shell *shell, ListIdentifierLen lil) {
@@ -28,6 +28,21 @@ void kjell_cd(Shell *shell, ListIdentifierLen lil) {
     }
     shell->previous_path = shell->current_path;
     shell->current_path = getcwd(NULL, 0);
+}
+
+void kjell_exec(Shell *shell, ListIdentifierLen args) {
+    if (args.list_len == 0) {
+        return;
+    }
+    char **args_list = malloc(sizeof(char*) * args.list_len);
+    for (int i = 0; i < args.list_len; i++) {
+        args_list[i] = args.list->identifier_;
+        args.list = args.list->listidentifier_;
+    }
+    if (execvp(args_list[0], args_list) == -1) {
+        perror(args_list[0]);
+    }
+    exit(EXIT_SUCCESS);
 }
 
 void kjell_exit(Shell *shell, ListIdentifierLen args) {

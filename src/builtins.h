@@ -7,9 +7,11 @@
 void kjell_cd(Shell *shell, ListIdentifierLen args);
 void kjell_help(Shell *shell, ListIdentifierLen args);
 void kjell_exit(Shell *shell, ListIdentifierLen args);
+void kjell_exec(Shell *shell, ListIdentifierLen args);
 
 char *builtin_str[] = {
     "cd",
+    "exec",
     "help",
     "exit",
     ":q",
@@ -17,6 +19,7 @@ char *builtin_str[] = {
 
 void (*builtin_func[]) (Shell*, ListIdentifierLen) = {
     &kjell_cd,
+    &kjell_exec,
     &kjell_help,
     &kjell_exit,
     &kjell_exit,
