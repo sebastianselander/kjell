@@ -5,26 +5,36 @@
 #include "gram/Absyn.h"
 
 #define HOME_PATH "/home/sebastian"
-void cbsh_cd(Shell *shell, ListIdentifier args) {
+void kjell_cd(Shell *shell, ListIdentifierLen lil) {
     ExitInfo exit_info = exit_info_init();
-    char *arg;
-    if (args[0].identifier_ == NULL) {
-        arg = HOME_PATH;
-    } else {
-        arg = args[0].identifier_;
+    if (lil.list_len > 1) {
+        shell->exit_code = 1;
+        printf("cd: too many arguments\n");
+        return;
     }
-    if (chdir(arg) != 0) {
+    char *path = HOME_PATH;
+    if (lil.list_len > 0) {
+        char *first_arg = lil.list->identifier_;
+        if (strcmp("-", first_arg) == 0) {
+            printf("Previous: %s\n", shell->previous_path);
+            path = shell->previous_path;
+        } else {
+            path = first_arg;
+        }
+    }
+    if (chdir(path) != 0) {
         perror("cd");
         exit_info.exit_code = 1;
     }
+    shell->previous_path = shell->current_path;
+    shell->current_path = getcwd(NULL, 0);
 }
 
-void cbsh_exit(Shell *shell, ListIdentifier args) {
-    ExitInfo exit_info = exit_info_init();
-    exit_info.terminate = true;
+void kjell_exit(Shell *shell, ListIdentifierLen args) {
+    shell->exit = true;
 }
 
-void cbsh_help(Shell *shell, ListIdentifier args) {
+void kjell_help(Shell *shell, ListIdentifierLen args) {
     ExitInfo exit_info = exit_info_init();
     printf("help!\n");
 }

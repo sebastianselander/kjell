@@ -4,9 +4,9 @@
 #include "utils.h"
 #include "gram/Absyn.h"
 
-void cbsh_cd(Shell *shell, ListIdentifier args);
-void cbsh_help(Shell *shell, ListIdentifier args);
-void cbsh_exit(Shell *shell, ListIdentifier args);
+void kjell_cd(Shell *shell, ListIdentifierLen args);
+void kjell_help(Shell *shell, ListIdentifierLen args);
+void kjell_exit(Shell *shell, ListIdentifierLen args);
 
 char *builtin_str[] = {
     "cd",
@@ -15,14 +15,14 @@ char *builtin_str[] = {
     ":q",
 };
 
-void (*builtin_func[]) (Shell*, ListIdentifier) = {
-    &cbsh_cd,
-    &cbsh_help,
-    &cbsh_exit,
-    &cbsh_exit,
+void (*builtin_func[]) (Shell*, ListIdentifierLen) = {
+    &kjell_cd,
+    &kjell_help,
+    &kjell_exit,
+    &kjell_exit,
 };
 
-int cbsh_num_builtins() {
+int kjell_num_builtins() {
     return sizeof(builtin_str) / sizeof(char*);
 }
 
