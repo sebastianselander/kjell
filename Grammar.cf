@@ -1,0 +1,17 @@
+Sequential. Expression ::= Bang ";" Expression ;
+Or. Expression ::= Bang "||" Expression ; 
+And. Expression ::= Bang "&&" Expression ;
+NextExpr. Expression ::= Bang ;
+Empty. Expression ::= "";
+
+Bng. Bang ::= "!" Subshell ;
+NextBang. Bang ::= Subshell ;
+
+Subsh. Subshell ::= "(" Expression ")" ;
+Command. Subshell ::= Identifier Args ;
+
+ArgsList. Args ::= [Identifier] ;
+ArgsCommand. Args ::= "$(" Expression ")" ;
+
+token Identifier (letter | '.' | '/' | '-')+;
+separator Identifier " " ;

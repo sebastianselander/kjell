@@ -2,26 +2,30 @@
 #define BUILTINS_H
 
 #include "utils.h"
+#include "gram/Absyn.h"
 
-ExitInfo cbsh_cd(char **args);
-ExitInfo cbsh_help(char **args);
-ExitInfo cbsh_exit(char **args);
+void kjell_cd(Shell *shell, ListIdentifierLen args);
+void kjell_help(Shell *shell, ListIdentifierLen args);
+void kjell_exit(Shell *shell, ListIdentifierLen args);
+void kjell_exec(Shell *shell, ListIdentifierLen args);
 
 char *builtin_str[] = {
     "cd",
+    "exec",
     "help",
     "exit",
     ":q",
 };
 
-ExitInfo (*builtin_func[]) (char**) = {
-    &cbsh_cd,
-    &cbsh_help,
-    &cbsh_exit,
-    &cbsh_exit,
+void (*builtin_func[]) (Shell*, ListIdentifierLen) = {
+    &kjell_cd,
+    &kjell_exec,
+    &kjell_help,
+    &kjell_exit,
+    &kjell_exit,
 };
 
-int cbsh_num_builtins() {
+int kjell_num_builtins() {
     return sizeof(builtin_str) / sizeof(char*);
 }
 

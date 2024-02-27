@@ -15,4 +15,3 @@ parser:
 
 lexer:
 	$(CC) $(CFLAGS) -o bin/lexer utils.c lexer.c && ./bin/lexer
-

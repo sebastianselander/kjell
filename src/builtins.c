@@ -1,32 +1,54 @@
+#include "gram/Absyn.h"
 #include "utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 #define HOME_PATH "/home/sebastian"
-ExitInfo cbsh_cd(char **args) {
+void kjell_cd(Shell *shell, ListIdentifierLen lil) {
     ExitInfo exit_info = exit_info_init();
-    char *arg;
-    if (args[1] == NULL) {
-        arg = HOME_PATH;
-    } else {
-        arg = args[1];
+    if (lil.list_len > 1) {
+        shell->exit_code = 1;
+        printf("cd: too many arguments\n");
+        return;
     }
-    if (chdir(arg) != 0) {
+    char *path = HOME_PATH;
+    if (lil.list_len > 0) {
+        char *first_arg = lil.list->identifier_;
+        if (strcmp("-", first_arg) == 0) {
+            printf("Previous: %s\n", shell->previous_path);
+            path = shell->previous_path;
+        } else {
+            path = first_arg;
+        }
+    }
+    if (chdir(path) != 0) {
         perror("cd");
         exit_info.exit_code = 1;
     }
-    return exit_info;
+    shell->previous_path = shell->current_path;
+    shell->current_path = getcwd(NULL, 0);
 }
 
-ExitInfo cbsh_exit(void) {
-    ExitInfo exit_info = exit_info_init();
-    exit_info.terminate = true;
-    return exit_info;
+void kjell_exec(Shell *shell, ListIdentifierLen args) {
+    if (args.list_len == 0) {
+        return;
+    }
+    char **args_list = malloc(sizeof(char*) * args.list_len);
+    for (int i = 0; i < args.list_len; i++) {
+        args_list[i] = args.list->identifier_;
+        args.list = args.list->listidentifier_;
+    }
+    if (execvp(args_list[0], args_list) == -1) {
+        perror(args_list[0]);
+    }
+    exit(EXIT_SUCCESS);
 }
 
-ExitInfo cbsh_help(void) {
-    ExitInfo exit_info = exit_info_init();
+void kjell_exit(Shell *shell, ListIdentifierLen args) {
+    shell->exit = true;
+}
+
+void kjell_help(Shell *shell, ListIdentifierLen args) {
     printf("help!\n");
-    return exit_info;
 }

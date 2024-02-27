@@ -1,13 +1,15 @@
-run:
-	cd src && make run
-build:
-	cd src && make build
+CC = gcc
+TARGET = bin/kjell
+FLAGS = -Wall -pedantic -Wextra
+SRCDIR = src
+GRAMDIR = src/gram
+SRC = $(SRCDIR)/shell.c $(SRCDIR)/builtins.c $(SRCDIR)/utils.c $(SRCDIR)/gram/Absyn.c $(GRAMDIR)/Buffer.c $(GRAMDIR)/Printer.c $(GRAMDIR)/Skeleton.c $(GRAMDIR)/Parser.c $(GRAMDIR)/Lexer.c
 
-clean:
-	cd src && make clean
+build: grammar
+	$(CC) $(FLAGS) -o $(TARGET) $(SRC)
 
-parser:
-	cd src && make parser
+grammar:
+	bnfc --c -m Grammar.cf -o $(GRAMDIR) && cd $(GRAMDIR) && make
 
-lexer:
-	cd src && make lexer
+run: build
+	./bin/kjell

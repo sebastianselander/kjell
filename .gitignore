@@ -2,4 +2,5 @@
 .ccls-cache/
 .envrc
 out
-src/bin
+bin/
+src/gram
