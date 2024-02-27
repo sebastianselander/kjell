@@ -3,14 +3,22 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include "gram/Absyn.h"
 
 typedef struct ExitInfo ExitInfo;
 
 typedef struct {
+    char* file_name;
+    bool exit;
     int exit_code;
     char* current_path;
     char* previous_path;
 } Shell;
+
+typedef struct {
+    size_t list_len;
+    ListIdentifier list;
+} ListIdentifierLen;
 
 void normalize_status(int *status);
 

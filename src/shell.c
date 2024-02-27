@@ -9,6 +9,26 @@
 
 typedef struct ExitInfo ExitInfo;
 
+size_t argslist_len(ListIdentifier list) {
+    int i = 0;
+    while (list != NULL) {
+        i++;
+        list = list->listidentifier_;
+    }
+    return i;
+}
+
+char **make_argslist_execvp(Identifier command, ListIdentifierLen list) {
+    ListIdentifier l = list.list;
+    char **args = malloc(sizeof(char *) * list.list_len + 1);
+    args[0] = command;
+    for (int i = 0; i < list.list_len; i++) {
+        args[i+1] = l->identifier_;
+        l = l->listidentifier_;
+    }
+    return args;
+}
+
 char *read_line() {
     char *line = NULL;
     size_t bufsize = 0;
@@ -24,90 +44,95 @@ char *read_line() {
     return line;
 }
 
-void prompt(int exit_code) {
-    char *cwd = getcwd(NULL, 0);
+void prompt(Shell *shell) {
+    char *cwd = shell->current_path;
     char *green = "\033[32m";
     char *red = "\033[31m";
     char *close = "\033[0m";
-    if (exit_code) {
+    if (shell->exit_code) {
         printf("%s\n%s$%s ", cwd, red, close);
     } else {
         printf("%s\n%s$ %s", cwd, green, close);
     }
-    free(cwd);
 }
 
-/* ExitInfo shell_launch(Shell *shell, Identifier command, ListIdentifier args) { */
-/*     pid_t pid = fork(); */
-/**/
-/*     if (pid == 0) { */
-/*         if (execvp(args[0], args) == -1) { */
-/*             perror("shell"); */
-/*         } */
-/*         exit(EXIT_FAILURE); */
-/*     } else if (pid < 0) { */
-/*         perror("shell"); */
-/*     } else { */
-/*         pid_t wpid = wait(&exit_c); */
-/*         normalize_status(&exit_c); */
-/*         if (negate) { */
-/*             exit_c = !exit_c; */
-/*         } */
-/*     } */
-/**/
-/*     ExitInfo exit_info = exit_info_init(); */
-/*     exit_info.exit_code = exit_c; */
-/*     return exit_info; */
-/* } */
-
-void interpret_command(Shell *shell, Identifier command, ListIdentifier args) {
-    if (strlen(command) == 0) {
-        assert(args == NULL);
-        shell->exit_code = 0;
-        return;
-    }
-    for (int i = 0; i < cbsh_num_builtins(); i++) {
+bool shell_execute_builtin(Shell *shell, Identifier command,
+                           ListIdentifierLen args) {
+    for (int i = 0; i < kjell_num_builtins(); i++) {
         if (strcmp(command, builtin_str[i]) == 0) {
             (*builtin_func[i])(shell, args);
-            return;
+            return true;
         }
     }
-
+    return false;
+}
+void shell_execute_external(Shell *shell, Identifier command,
+                            ListIdentifierLen args) {
+    printf("external\n");
+    pid_t pid = fork();
+    if (pid == 0) {
+        char **args_list = make_argslist_execvp(command, args);
+        if (execvp(command, args_list) == -1) {
+            perror(command);
+        }
+        exit(EXIT_FAILURE);
+    } else if (pid < 0) {
+        perror("pid");
+    } else {
+        int status;
+        pid_t wpid = wait(&status);
+        status != 0 ? shell->exit_code = status : 1;
+    }
 }
 
-ListIdentifier interpret_args(Shell *shell, Args args) {
-    printf("Interpret Args\n");
+// Precondition: command is not be empty
+void interpret_command(Shell *shell, Identifier command,
+                       ListIdentifierLen args) {
+    if (!shell_execute_builtin(shell, command, args)) {
+        shell_execute_external(shell, command, args);
+    }
+}
+
+ListIdentifierLen interpret_args(Shell *shell, Args args) {
+    // printf("Interpret Args\n");
     switch (args->kind) {
     case is_ArgsList: {
         ListIdentifier li = args->u.argslist_.listidentifier_;
-        for (int i = 0; li[i].identifier_ != 0; ++i) {
-            printf("%s\n", li[i].identifier_);
+        if (li == NULL) {
+            ListIdentifierLen lil = {0};
+            lil.list_len = 0;
+            lil.list = NULL;
+            return lil;
+        } else {
+            ListIdentifierLen lil = {0};
+            lil.list_len = argslist_len(li);
+            lil.list = li;
+            return lil;
         }
-        return li;
     }
     case is_ArgsCommand: {
-        return NULL;
+        ListIdentifierLen lil = {0};
+        return lil;
     }
     }
 }
 
 void interpret_subshell(Shell *shell, Subshell subshell) {
-    printf("Interpret Subshell\n");
+    // printf("Interpret Subshell\n");
     switch (subshell->kind) {
     case is_Subsh: {
     } break;
     case is_Command: {
         Identifier command = subshell->u.command_.identifier_;
-        printf("\nCommand is: %s\n", command);
         Args args = subshell->u.command_.args_;
-        ListIdentifier list_identifier = interpret_args(shell, args);
-        interpret_command(shell, command, list_identifier);
+        ListIdentifierLen list_identifier_len = interpret_args(shell, args);
+        interpret_command(shell, command, list_identifier_len);
     } break;
     }
 }
 
 void interpret_bang(Shell *shell, Bang bang) {
-    printf("Interpret Bang\n");
+    // printf("Interpret Bang\n");
     switch (bang->kind) {
     case is_Bng: {
     } break;
@@ -119,7 +144,7 @@ void interpret_bang(Shell *shell, Bang bang) {
 }
 
 void interpret_expression(Expression expression, Shell *shell) {
-    printf("Interpret Expression\n");
+    // printf("Interpret Expression\n");
     switch (expression->kind) {
     case is_Sequential: {
         Bang left = expression->u.sequential_.bang_;
@@ -139,23 +164,29 @@ void interpret_expression(Expression expression, Shell *shell) {
     }
 }
 
-void shell_loop() {
-    ExitInfo exit_info = exit_info_init();
-    while (1) {
-        prompt(exit_info.exit_code);
+Shell shell_init(char* file_name) {
+    Shell shell = {0};
+    shell.file_name = file_name;
+    shell.exit_code = 0;
+    shell.current_path = getcwd(NULL, 0);
+    shell.previous_path = getcwd(NULL, 0);
+    return shell;
+}
+
+int main(int argc, char *argv[]) {
+    Shell shell = shell_init(argv[0]);
+    while (!shell.exit) {
+        prompt(&shell);
         char *line = read_line();
         size_t line_len = strlen(line);
-        line[line_len - 1] = 0;
+        line[line_len - 1] = 0; // remove newline
         Expression expr = psExpression(line);
-        Shell shell = {0};
         if (!expr) {
-            printf("Failed parsing\n");
+            shell.exit_code = 1;
         } else {
-            printf("Success parsing\n");
             interpret_expression(expr, &shell);
             free_Expression(expr);
         }
+        free(line);
     }
 }
-
-int main(int argc, char *argv[]) { shell_loop(); }
