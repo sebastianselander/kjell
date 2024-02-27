@@ -6,6 +6,12 @@
 
 typedef struct ExitInfo ExitInfo;
 
+typedef struct {
+    int exit_code;
+    char* current_path;
+    char* previous_path;
+} Shell;
+
 void normalize_status(int *status);
 
 ExitInfo exit_info_init();

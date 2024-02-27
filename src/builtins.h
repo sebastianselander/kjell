@@ -2,10 +2,11 @@
 #define BUILTINS_H
 
 #include "utils.h"
+#include "gram/Absyn.h"
 
-ExitInfo cbsh_cd(char **args);
-ExitInfo cbsh_help(char **args);
-ExitInfo cbsh_exit(char **args);
+void cbsh_cd(Shell *shell, ListIdentifier args);
+void cbsh_help(Shell *shell, ListIdentifier args);
+void cbsh_exit(Shell *shell, ListIdentifier args);
 
 char *builtin_str[] = {
     "cd",
@@ -14,7 +15,7 @@ char *builtin_str[] = {
     ":q",
 };
 
-ExitInfo (*builtin_func[]) (char**) = {
+void (*builtin_func[]) (Shell*, ListIdentifier) = {
     &cbsh_cd,
     &cbsh_help,
     &cbsh_exit,

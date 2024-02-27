@@ -1,19 +1,17 @@
-rules Expression ::= Ident ;
+Sequential. Expression ::= Bang ";" Expression ;
+Or. Expression ::= Bang "||" Expression ; 
+And. Expression ::= Bang "&&" Expression ;
+NextExpr. Expression ::= Bang ;
+Empty. Expression ::= "";
 
-rules List ::= Bang ";" List
-             | Bang "||" List
-             | Bang "&&" List
-             | Bang
-             ;
+Bng. Bang ::= "!" Subshell ;
+NextBang. Bang ::= Subshell ;
 
-rules Bang ::= "!" Subshell
-             | Subshell
-             ;
+Subsh. Subshell ::= "(" Expression ")" ;
+Command. Subshell ::= Identifier Args ;
 
-rules Subshell ::= "(" List ")" | Ident Args ;
+ArgsList. Args ::= [Identifier] ;
+ArgsCommand. Args ::= "$(" Expression ")" ;
 
-rules Args ::= "$(" Expression ")"
-             | [Ident]
-             ;
-
-separator Ident " " ;
+token Identifier (letter | '.' | '/')+;
+separator Identifier " " ;
