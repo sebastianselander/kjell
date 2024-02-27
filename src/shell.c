@@ -35,6 +35,7 @@ char *read_line() {
 
     if (getline(&line, &bufsize, stdin) == -1) {
         if (feof(stdin)) {
+            printf("Exiting...\n");
             exit(EXIT_SUCCESS);
         } else {
             perror("read line");
@@ -66,6 +67,7 @@ bool shell_execute_builtin(Shell *shell, Identifier command,
     }
     return false;
 }
+
 void shell_execute_external(Shell *shell, Identifier command,
                             ListIdentifierLen args) {
     printf("external\n");

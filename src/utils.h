@@ -32,4 +32,6 @@ struct ExitInfo {
 void print_str(const char *text, size_t text_len);
 void println_str(const char* text, size_t text_len);
 
+void string_free(String string);
+
 #endif

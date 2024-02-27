@@ -50,6 +50,5 @@ void kjell_exit(Shell *shell, ListIdentifierLen args) {
 }
 
 void kjell_help(Shell *shell, ListIdentifierLen args) {
-    ExitInfo exit_info = exit_info_init();
     printf("help!\n");
 }
