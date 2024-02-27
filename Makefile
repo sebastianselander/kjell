@@ -9,7 +9,7 @@ build: grammar
 	$(CC) $(FLAGS) -o $(TARGET) $(SRC)
 
 grammar:
-	bnfc --c Grammar.cf -o $(GRAMDIR) && cd $(GRAMDIR) && make
+	bnfc --c -m Grammar.cf -o $(GRAMDIR) && cd $(GRAMDIR) && make
 
 run: build
 	./bin/kjell
