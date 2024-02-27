@@ -75,7 +75,7 @@ void shell_execute_external(Shell *shell, Identifier command,
         if (execvp(command, args_list) == -1) {
             perror(command);
         }
-        exit(EXIT_FAILURE);
+        exit(EXIT_SUCCESS);
     } else if (pid < 0) {
         perror("pid");
     } else {
