@@ -18,7 +18,8 @@ void kjell_cd(Shell *shell, ListIdentifierLen lil) {
             path = first_arg;
         }
     }
-    if (chdir(path) != 0) {
+    int status = chdir(path);
+    if (status != 0) {
         perror("cd");
     }
     shell->previous_path = shell->current_path;
