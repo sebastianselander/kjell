@@ -5,7 +5,8 @@
 #include "gram/Printer.h"
 #include "utils.h"
 #include <assert.h>
-#include <string.h>
+
+#define BUFSIZE_INIT 1024
 
 typedef struct ExitInfo ExitInfo;
 
@@ -76,7 +77,6 @@ bool shell_execute_builtin(Shell *shell, Identifier command,
     return false;
 }
 
-#define BUFSIZE_INIT 1024
 #define PATH "PATH="
 void shell_execute_external(Shell *shell, Identifier command,
                             ListIdentifierLen args) {
@@ -214,19 +214,28 @@ Shell shell_init() {
     return shell;
 }
 
-char* kjell_getline() {
+char *kjell_getline() {
     char *line = read_line();
     size_t line_len = strlen(line);
     line[line_len - 1] = 0; // remove newline
     return line;
 }
 
-int main(int argc, char *argv[]) {
+char *kjell_read_line() {
+    char* line = NULL;
+    size_t line_len = 0;
+    getline(&line, &line_len, stdin);
+    printf("%s", line);
+    printf("char: %c\nlen: %zu", line[0], line_len);
+    return line;
+}
+
+void kjell(int argc, char *argv[]) {
     Shell shell = shell_init();
     if (argc == 1) {
         while (!shell.exit) {
             prompt(&shell);
-            char* line = kjell_getline();
+            char *line = kjell_getline();
             Expression expr = psExpression(line);
             if (!expr) {
                 shell.exit_code = 1;
@@ -252,4 +261,10 @@ int main(int argc, char *argv[]) {
         printf("Too many arguments: %d\n", argc);
         exit(EXIT_FAILURE);
     }
+}
+
+int main(int argc, char *argv[]) {
+    char *line = kjell_read_line();
+    /* printf("line = %s\n", line); */
+    /* kjell(argc, argv); */
 }
