@@ -126,7 +126,7 @@ void interpret_bang(Shell *shell, Bang bang) {
     case is_Bng: {
         Subshell subshell = bang->u.bng_.subshell_;
         interpret_subshell(shell, subshell);
-        shell->exit_code = shell->exit_code ? EXIT_SUCCESS : EXIT_FAILURE;
+        shell->exit_code = !shell->exit_code;
     } break;
     case is_NextBang: {
         Subshell subshell = bang->u.nextbang_.subshell_;
