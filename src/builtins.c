@@ -6,6 +6,7 @@
 
 void kjell_cd(Shell *shell, ListIdentifierLen lil) {
     if (lil.list_len > 1) {
+        shell->exit_code = EXIT_FAILURE;
         printf("cd: too many arguments\n");
         return;
     }
@@ -21,9 +22,12 @@ void kjell_cd(Shell *shell, ListIdentifierLen lil) {
     int status = chdir(path);
     if (status != 0) {
         perror("cd");
+        shell->exit_code = EXIT_FAILURE;
+    } else {
+        shell->previous_path = shell->current_path;
+        shell->current_path = getcwd(NULL, 0);
+        shell->exit_code = EXIT_SUCCESS;
     }
-    shell->previous_path = shell->current_path;
-    shell->current_path = getcwd(NULL, 0);
 }
 
 void kjell_exec(Shell *shell, ListIdentifierLen args) {
