@@ -79,6 +79,9 @@ void shell_execute_external(Shell *shell, Identifier command,
     } else {
         int status;
         pid_t wpid = wait(&status);
+        if (wpid == -1) {
+            perror("Child process failed");
+        }
         shell->exit_code = status != 0 ? EXIT_FAILURE : EXIT_SUCCESS;
     }
 }
