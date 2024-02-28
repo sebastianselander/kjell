@@ -5,9 +5,7 @@
 #include <unistd.h>
 
 void kjell_cd(Shell *shell, ListIdentifierLen lil) {
-    ExitInfo exit_info = exit_info_init();
     if (lil.list_len > 1) {
-        shell->exit_code = 1;
         printf("cd: too many arguments\n");
         return;
     }
@@ -22,7 +20,6 @@ void kjell_cd(Shell *shell, ListIdentifierLen lil) {
     }
     if (chdir(path) != 0) {
         perror("cd");
-        exit_info.exit_code = 1;
     }
     shell->previous_path = shell->current_path;
     shell->current_path = getcwd(NULL, 0);
