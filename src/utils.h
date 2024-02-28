@@ -22,16 +22,12 @@ typedef struct {
 
 void normalize_status(int *status);
 
-ExitInfo exit_info_init();
-
-struct ExitInfo {
-    int exit_code;
-    bool terminate;
-}; 
-
 void print_str(const char *text, size_t text_len);
 void println_str(const char* text, size_t text_len);
 
 void string_free(String string);
+
+bool is_unqualified(char* str);
+char **make_chrarray(Identifier command, ListIdentifierLen list);
 
 #endif
