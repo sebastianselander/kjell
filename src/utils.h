@@ -8,7 +8,6 @@
 typedef struct ExitInfo ExitInfo;
 
 typedef struct {
-    char* file_name;
     bool exit;
     int exit_code;
     char* current_path;

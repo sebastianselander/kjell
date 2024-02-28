@@ -168,9 +168,8 @@ void interpret_expression(Shell *shell, Expression expression) {
     }
 }
 
-Shell shell_init(char *file_name) {
+Shell shell_init() {
     Shell shell = {0};
-    shell.file_name = file_name;
     shell.exit_code = 0;
     shell.current_path = getcwd(NULL, 0);
     shell.previous_path = getcwd(NULL, 0);
