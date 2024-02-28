@@ -214,14 +214,19 @@ Shell shell_init() {
     return shell;
 }
 
+char* kjell_getline() {
+    char *line = read_line();
+    size_t line_len = strlen(line);
+    line[line_len - 1] = 0; // remove newline
+    return line;
+}
+
 int main(int argc, char *argv[]) {
     Shell shell = shell_init();
     if (argc == 1) {
         while (!shell.exit) {
             prompt(&shell);
-            char *line = read_line();
-            size_t line_len = strlen(line);
-            line[line_len - 1] = 0; // remove newline
+            char* line = kjell_getline();
             Expression expr = psExpression(line);
             if (!expr) {
                 shell.exit_code = 1;
