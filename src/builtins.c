@@ -49,6 +49,10 @@ void kjell_echo(Shell *shell, ListIdentifierLen args) {
     char** args_list = make_chrarray("echo", args); 
     for (int i = 1; i < args.list_len + 1; i++) {
         if (args_list[i][0] == '$') {
+            if (strcmp(&args_list[i][1], "?") == 0) {
+                printf("%d", shell->exit_code);
+                break;
+            }
             char* envvar = getenv(&args_list[i][1]); 
             printf("%s", envvar);
         } else {
@@ -57,6 +61,7 @@ void kjell_echo(Shell *shell, ListIdentifierLen args) {
         printf(" ");
     }
     printf("\n");
+    shell->exit_code = EXIT_SUCCESS;
 }
 
 void kjell_exit(Shell *shell, ListIdentifierLen args) {
