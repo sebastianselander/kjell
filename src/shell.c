@@ -18,16 +18,6 @@ size_t argslist_len(ListIdentifier list) {
     return i;
 }
 
-char **make_argslist_execvp(Identifier command, ListIdentifierLen list) {
-    ListIdentifier l = list.list;
-    char **args = malloc(sizeof(char *) * list.list_len + 1);
-    args[0] = command;
-    for (int i = 0; i < list.list_len; i++) {
-        args[i + 1] = l->identifier_;
-        l = l->listidentifier_;
-    }
-    return args;
-}
 
 char *read_line() {
     char *line = NULL;
@@ -46,14 +36,13 @@ char *read_line() {
 }
 
 void prompt(Shell *shell) {
-    char *cwd = shell->current_path;
     char *green = "\033[32m";
     char *red = "\033[31m";
     char *close = "\033[0m";
-    if (shell->exit_code) {
-        printf("%s\n%s$%s ", cwd, red, close);
+    if (shell->exit_code == EXIT_FAILURE) {
+        printf("%s$%s ", red, close);
     } else {
-        printf("%s\n%s$ %s", cwd, green, close);
+        printf("%s$%s ", green, close);
     }
 }
 
@@ -68,21 +57,23 @@ bool shell_execute_builtin(Shell *shell, Identifier command,
     return false;
 }
 
+#define BUFSIZE_INIT 1024
+#define PATH "PATH="
 void shell_execute_external(Shell *shell, Identifier command,
                             ListIdentifierLen args) {
     pid_t pid = fork();
     if (pid == 0) {
-        char **args_list = make_argslist_execvp(command, args);
-        if (execvp(command, args_list) == -1) {
+        char **args_list = make_chrarray(command, args);
+        if (execvp(args_list[0], args_list) == -1) {
             perror(command);
         }
-        exit(EXIT_SUCCESS);
+        exit(EXIT_FAILURE);
     } else if (pid < 0) {
         perror("pid");
     } else {
         int status;
         pid_t wpid = wait(&status);
-        shell->exit_code = status != 0 ? 1 : 0;
+        shell->exit_code = status != 0 ? EXIT_FAILURE : EXIT_SUCCESS;
     }
 }
 
@@ -135,7 +126,7 @@ void interpret_bang(Shell *shell, Bang bang) {
     case is_Bng: {
         Subshell subshell = bang->u.bng_.subshell_;
         interpret_subshell(shell, subshell);
-        shell->exit_code = shell->exit_code ? 0 : 1;
+        shell->exit_code = shell->exit_code ? EXIT_SUCCESS : EXIT_FAILURE;
     } break;
     case is_NextBang: {
         Subshell subshell = bang->u.nextbang_.subshell_;
@@ -156,7 +147,7 @@ void interpret_expression(Shell *shell, Expression expression) {
         Bang left = expression->u.or_.bang_;
         Expression right = expression->u.sequential_.expression_;
         interpret_bang(shell, left);
-        if (shell->exit_code != 0) {
+        if (shell->exit_code != EXIT_FAILURE) {
             interpret_expression(shell, right);
         }
     } break;
@@ -164,7 +155,7 @@ void interpret_expression(Shell *shell, Expression expression) {
         Bang left = expression->u.or_.bang_;
         Expression right = expression->u.sequential_.expression_;
         interpret_bang(shell, left);
-        if (shell->exit_code == 0) {
+        if (shell->exit_code == EXIT_SUCCESS) {
             interpret_expression(shell, right);
         }
     } break;
