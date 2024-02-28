@@ -177,12 +177,26 @@ Shell shell_init() {
 }
 
 int main(int argc, char *argv[]) {
-    Shell shell = shell_init(argv[0]);
-    while (!shell.exit) {
-        prompt(&shell);
-        char *line = read_line();
+    Shell shell = shell_init();
+    if (argc == 1) {
+        while (!shell.exit) {
+            prompt(&shell);
+            char *line = read_line();
+            size_t line_len = strlen(line);
+            line[line_len - 1] = 0; // remove newline
+            Expression expr = psExpression(line);
+            if (!expr) {
+                shell.exit_code = 1;
+            } else {
+                interpret_expression(&shell, expr);
+                free_Expression(expr);
+            }
+            free(line);
+        }
+    }
+    if (argc == 2) {
+        char *line = argv[1];
         size_t line_len = strlen(line);
-        line[line_len - 1] = 0; // remove newline
         Expression expr = psExpression(line);
         if (!expr) {
             shell.exit_code = 1;
@@ -190,6 +204,9 @@ int main(int argc, char *argv[]) {
             interpret_expression(&shell, expr);
             free_Expression(expr);
         }
-        free(line);
+    }
+    if (argc > 2) {
+        printf("Too many arguments: %d\n", argc);
+        exit(EXIT_FAILURE);
     }
 }
