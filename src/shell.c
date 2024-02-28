@@ -15,6 +15,20 @@ void interpret_command(Shell *shell, Identifier command,
                        ListIdentifierLen args);
 ListIdentifierLen interpret_args(Shell *shell, Args args);
 void interpret_expression(Shell *shell, Expression expression);
+
+void restore_cee(Shell *shell) {
+    /*
+     * Currently only current working directory is relevant
+     * TODO: implement more as more stuff is added
+     * Command execution environement:
+     * https://www.gnu.org/software/bash/manual/html_node/Command-Execution-Environment.html
+     */
+    if (chdir(shell->current_path) != 0) {
+        perror("restore");
+        exit(EXIT_FAILURE);
+    }
+}
+
 size_t argslist_len(ListIdentifier list) {
     int i = 0;
     while (list != NULL) {
@@ -23,7 +37,6 @@ size_t argslist_len(ListIdentifier list) {
     }
     return i;
 }
-
 
 char *read_line() {
     char *line = NULL;
@@ -120,6 +133,22 @@ ListIdentifierLen interpret_args(Shell *shell, Args args) {
 void interpret_subshell(Shell *shell, Subshell subshell) {
     switch (subshell->kind) {
     case is_Subsh: {
+        Expression expr = subshell->u.subsh_.expression_;
+        pid_t pid = fork();
+        if (pid == 0) {
+            Shell subsh = *shell;
+            interpret_expression(&subsh, expr);
+            restore_cee(shell);
+        } else if (pid < 0) {
+            perror("pid");
+        } else {
+            int status;
+            pid_t wpid = wait(&status);
+            if (wpid == -1) {
+                perror("Child process failed");
+            }
+            shell->exit_code = status != 0 ? EXIT_FAILURE : EXIT_SUCCESS;
+        }
     } break;
     case is_Command: {
         Identifier command = subshell->u.command_.identifier_;
