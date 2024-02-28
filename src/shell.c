@@ -147,7 +147,7 @@ void interpret_expression(Shell *shell, Expression expression) {
         Bang left = expression->u.or_.bang_;
         Expression right = expression->u.sequential_.expression_;
         interpret_bang(shell, left);
-        if (shell->exit_code != EXIT_FAILURE) {
+        if (shell->exit_code == EXIT_FAILURE) {
             interpret_expression(shell, right);
         }
     } break;
