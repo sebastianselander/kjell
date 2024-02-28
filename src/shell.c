@@ -9,6 +9,12 @@
 
 typedef struct ExitInfo ExitInfo;
 
+void interpret_bang(Shell *shell, Bang bang);
+void interpret_subshell(Shell *shell, Subshell subshell);
+void interpret_command(Shell *shell, Identifier command,
+                       ListIdentifierLen args);
+ListIdentifierLen interpret_args(Shell *shell, Args args);
+void interpret_expression(Shell *shell, Expression expression);
 size_t argslist_len(ListIdentifier list) {
     int i = 0;
     while (list != NULL) {
