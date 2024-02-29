@@ -222,12 +222,8 @@ char *kjell_getline() {
 }
 
 char *kjell_read_line() {
-    char* line = NULL;
-    size_t line_len = 0;
-    getline(&line, &line_len, stdin);
-    printf("%s", line);
-    printf("char: %c\nlen: %zu", line[0], line_len);
-    return line;
+    assert(false);
+    return "not implemented";
 }
 
 void kjell(int argc, char *argv[]) {
