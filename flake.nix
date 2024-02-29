@@ -33,6 +33,7 @@
               bison
               haskellPackages.BNFC
               flex
+              valgrind
             ];
 
             # development.
