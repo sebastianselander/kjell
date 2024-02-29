@@ -221,9 +221,31 @@ char *kjell_getline() {
     return line;
 }
 
-char *kjell_read_line() {
-    assert(false);
-    return "not implemented";
+char *kjell_read() {
+    char *result = malloc(sizeof(char *) * BUFSIZE_INIT);
+    result[0] = 0;
+    while (1) {
+        char *line = kjell_getline();
+        size_t line_len = strlen(line);
+        if (line_len > 0) {
+            char last_chr = line[line_len - 1];
+            if (last_chr == '\\') {
+                line[line_len - 1] = 0;
+                result = strcat(result, line);
+                printf("> ");
+                free(line);
+                continue;
+            }
+            if (str_ends_in(line, "&&") || str_ends_in(line, "|")) {
+                result = strcat(result, line);
+                printf("> ");
+                free(line);
+                continue;
+            }
+            result = strcat(result, line);
+        }
+        return result;
+    }
 }
 
 void kjell(int argc, char *argv[]) {
@@ -231,7 +253,7 @@ void kjell(int argc, char *argv[]) {
     if (argc == 1) {
         while (!shell.exit) {
             prompt(&shell);
-            char *line = kjell_getline();
+            char *line = kjell_read();
             Expression expr = psExpression(line);
             if (!expr) {
                 shell.exit_code = 1;
