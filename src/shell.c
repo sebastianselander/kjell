@@ -233,7 +233,7 @@ char *kjell_read() {
         size_t line_len = strlen(line);
         if (line_len > 0) {
             char last_chr = line[line_len - 1];
-            if (last_chr == '\\') {
+            if (str_ends_in(line, "\\")) {
                 line[line_len - 1] = 0;
                 result = strcat(result, line);
                 printf("> ");
