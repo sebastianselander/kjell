@@ -39,22 +39,6 @@ size_t argslist_len(ListIdentifier list) {
     return i;
 }
 
-char *read_line() {
-    char *line = NULL;
-    size_t bufsize = 0;
-
-    if (getline(&line, &bufsize, stdin) == -1) {
-        if (feof(stdin)) {
-            printf("Exiting...\n");
-            exit(EXIT_SUCCESS);
-        } else {
-            perror("read line");
-            exit(EXIT_FAILURE);
-        }
-    }
-    return line;
-}
-
 void prompt(Shell *shell) {
     char *green = "\033[32m";
     char *red = "\033[31m";
@@ -215,7 +199,18 @@ Shell shell_init() {
 }
 
 char *kjell_getline() {
-    char *line = read_line();
+    char *line = NULL;
+    size_t bufsize;
+    if (getline(&line, &bufsize, stdin) == -1) {
+        if (feof(stdin)) {
+            printf("Exiting...\n");
+            exit(EXIT_SUCCESS);
+        } else {
+            perror("read line");
+            exit(EXIT_FAILURE);
+        }
+    }
+    return line;
     size_t line_len = strlen(line);
     line[line_len - 1] = 0; // remove newline
     return line;
