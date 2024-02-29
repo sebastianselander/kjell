@@ -38,3 +38,26 @@ char **make_chrarray(Identifier command, ListIdentifierLen list) {
     }
     return args;
 }
+
+// returns the new size of buffer
+size_t str_concat(size_t buffer_size, char** write_to, char* left, char* right) {
+    size_t left_size = strlen(left) + 1;
+    size_t right_size = strlen(right) + 1;
+    if (left_size + right_size >= buffer_size) {
+        buffer_size *= 2;
+        printf("seggy? 1\n");
+        *write_to = realloc(*write_to, buffer_size);
+    }
+    *write_to = strcat(*write_to, left);
+    *write_to = strcat(*write_to, right);
+    return buffer_size;
+}
+
+bool str_ends_in(char* string, char* ends_in) {
+    size_t string_len = strlen(string);
+    size_t ends_in_len = strlen(ends_in);
+    if (string_len >= ends_in_len) {
+        return (strcmp(&string[string_len - ends_in_len], ends_in)  == 0);
+    }
+    return false;
+}
