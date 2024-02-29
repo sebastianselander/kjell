@@ -220,7 +220,6 @@ char *kjell_getline() {
             exit(EXIT_FAILURE);
         }
     }
-    return line;
     size_t line_len = strlen(line);
     line[line_len - 1] = 0; // remove newline
     return line;
