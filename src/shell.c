@@ -286,7 +286,5 @@ void kjell(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-    char *line = kjell_read_line();
-    /* printf("line = %s\n", line); */
-    /* kjell(argc, argv); */
+    kjell(argc, argv);
 }
