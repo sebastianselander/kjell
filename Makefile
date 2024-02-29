@@ -12,4 +12,4 @@ grammar:
 	bnfc --c -m Grammar.cf -o $(GRAMDIR) && cd $(GRAMDIR) && make
 
 run: build
-	./bin/kjell
+	clear && ./bin/kjell
