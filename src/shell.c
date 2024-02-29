@@ -165,6 +165,15 @@ void interpret_expression(Shell *shell, Expression expression) {
         interpret_bang(shell, left);
         interpret_expression(shell, right);
     } break;
+    case is_Pipe: {
+        Bang left = expression->u.pipe_.bang_;
+        Expression right = expression->u.pipe_.expression_;
+        // TODO: some stuff here
+        shell->in_pipe = true;
+        interpret_bang(shell, left);
+        interpret_expression(shell, right);
+        shell->in_pipe = false;
+    } break;
     case is_Or: {
         Bang left = expression->u.or_.bang_;
         Expression right = expression->u.sequential_.expression_;
@@ -192,6 +201,7 @@ void interpret_expression(Shell *shell, Expression expression) {
 
 Shell shell_init() {
     Shell shell = {0};
+    shell.in_pipe = false;
     shell.exit_code = 0;
     shell.current_path = getcwd(NULL, 0);
     shell.previous_path = getcwd(NULL, 0);
