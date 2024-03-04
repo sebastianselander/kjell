@@ -34,7 +34,7 @@
               haskellPackages.BNFC
               flex
               valgrind
-              make
+              gnumake
             ];
 
             # development.
